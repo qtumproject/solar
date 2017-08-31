@@ -7,11 +7,37 @@ import (
 	"os"
 	"path"
 	"path/filepath"
+	"runtime"
+	"sync"
 
 	"github.com/pkg/errors"
 )
 
-func buildTarget(target string) (err error) {
+func init() {
+	cmd := app.Command("build", "Compile Solidity contracts.")
+	target := cmd.Arg("target", "Source file or directory. Default is the current directory (`.`)").Default(".").String()
+	outputDir := cmd.Flag("outdir", "Output directory").String()
+
+	appTasks["build"] = func() (err error) {
+		builder := Builder{
+			target:       *target,
+			outputDir:    *outputDir,
+			compilerOpts: CompilerOptions{},
+		}
+
+		return builder.build()
+	}
+}
+
+type Builder struct {
+	compilerOpts CompilerOptions
+	target       string
+	outputDir    string
+}
+
+func (b *Builder) build() (err error) {
+	target := b.target
+
 	fi, err := os.Stat(target)
 
 	if os.IsNotExist(err) {
@@ -22,10 +48,6 @@ func buildTarget(target string) (err error) {
 		return
 	}
 
-	builder := Builder{
-		compilerOpts: CompilerOptions{},
-	}
-
 	if fi.IsDir() {
 		pat := path.Join(target, "*.sol")
 		matches, err := filepath.Glob(pat)
@@ -33,15 +55,28 @@ func buildTarget(target string) (err error) {
 			return errors.Wrap(err, "glob")
 		}
 
+		limit := make(chan struct{}, runtime.NumCPU())
+		var wg sync.WaitGroup
+		wg.Add(len(matches))
 		for _, filename := range matches {
-			fmt.Println("Compiling:", filename)
-			err := builder.Compile(filename)
-			if err != nil {
-				fmt.Println(err)
-			}
+			limit <- struct{}{}
+			filename := filename
+			go func() {
+				defer func() {
+					<-limit
+					wg.Done()
+				}()
+				fmt.Println("Compiling:", filename)
+				err := b.compile(filename)
+				if err != nil {
+					fmt.Println(err)
+				}
+			}()
 		}
+
+		wg.Wait()
 	} else {
-		err := builder.Compile(target)
+		err := b.compile(target)
 		if err != nil {
 			fmt.Println(err)
 		}
@@ -50,12 +85,7 @@ func buildTarget(target string) (err error) {
 	return
 }
 
-type Builder struct {
-	compilerOpts CompilerOptions
-	outputDir    string
-}
-
-func (b *Builder) Compile(filename string) error {
+func (b *Builder) compile(filename string) error {
 	outputFilename := filename + ".json"
 
 	f, err := os.Open(filename)

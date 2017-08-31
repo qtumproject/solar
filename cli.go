@@ -12,15 +12,6 @@ var (
 	appTasks = map[string]func() error{}
 )
 
-func init() {
-	cmd := app.Command("build", "Compile Solidity contracts.")
-	target := cmd.Arg("target", "Source file or directory. Default is the current directory (`.`)").Default(".").String()
-
-	appTasks["build"] = func() (err error) {
-		return buildTarget(*target)
-	}
-}
-
 func Main() {
 	cmdName, err := app.Parse(os.Args[1:])
 	if err != nil {
