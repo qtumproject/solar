@@ -32,9 +32,23 @@ type Bytes []byte
 func (b Bytes) String() string {
 	return hex.EncodeToString(b)
 }
+
 func (b Bytes) MarshalJSON() ([]byte, error) {
 	hexstr := fmt.Sprintf("\"%s\"", b.String())
 	return []byte(hexstr), nil
+}
+
+func (b *Bytes) UnmarshalJSON(data []byte) error {
+	// strip the quotes \"\"
+	hexstr := data[1 : len(data)-1]
+	dst := make([]byte, hex.DecodedLen(len(hexstr)))
+	_, err := hex.Decode(dst, hexstr)
+	if err != nil {
+		return err
+	}
+	*b = dst
+
+	return nil
 }
 
 type CompilerOptions struct {
