@@ -1,117 +1,17 @@
-package main
+package solar
 
 import (
+	"bytes"
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
-	"log"
-	"os"
 	"os/exec"
-	"path"
-	"path/filepath"
 	"strings"
 
 	"github.com/ethereum/go-ethereum/crypto/sha3"
 
 	"github.com/pkg/errors"
-	"gopkg.in/alecthomas/kingpin.v2"
 )
-
-var (
-	app         = kingpin.New("solar", "Solidity smart contract deployment management.")
-	buildCmd    = app.Command("build", "Compile Solidity contracts.")
-	buildTarget = buildCmd.Arg("target", "Source file or directory. Default is the current directory (`.`)").Default(".").String()
-)
-
-type Builder struct {
-	compilerOpts CompilerOptions
-	outputDir    string
-}
-
-func (b *Builder) Compile(filename string) error {
-	outputFilename := filename + ".json"
-
-	compiledContracts, err := compileSourceFile(filename, b.compilerOpts)
-	if err != nil {
-		return errors.Wrap(err, "compile")
-	}
-
-	outf, err := os.Create(outputFilename)
-	if err != nil {
-		return errors.Wrap(err, "output")
-	}
-	defer outf.Close()
-
-	contracts := make(map[string]CompiledContract)
-	for _, contract := range compiledContracts {
-		contracts[contract.Name] = contract
-	}
-
-	enc := json.NewEncoder(outf)
-	enc.SetIndent("", "\t")
-	err = enc.Encode(contracts)
-	if err != nil {
-		return err
-	}
-
-	return nil
-}
-
-func buildTask() (err error) {
-	fi, err := os.Stat(*buildTarget)
-
-	if os.IsNotExist(err) {
-		return errors.Errorf("Compile target not found: %s", *buildTarget)
-	}
-
-	if err != nil {
-		return
-	}
-
-	builder := Builder{
-		compilerOpts: CompilerOptions{},
-	}
-
-	if fi.IsDir() {
-		pat := path.Join(*buildTarget, "*.sol")
-		matches, err := filepath.Glob(pat)
-		if err != nil {
-			return errors.Wrap(err, "glob")
-		}
-
-		for _, filename := range matches {
-			fmt.Println("Compiling:", filename)
-			err := builder.Compile(filename)
-			if err != nil {
-				fmt.Println(err)
-			}
-		}
-	} else {
-		err := builder.Compile(*buildTarget)
-		if err != nil {
-			fmt.Println(err)
-		}
-	}
-
-	return
-}
-
-var cliTasks = map[string]func() error{
-	"build": buildTask,
-}
-
-func main() {
-	cmdName, err := app.Parse(os.Args[1:])
-	if err != nil {
-		log.Fatalln(err)
-	}
-
-	task := cliTasks[cmdName]
-	err = task()
-	if err != nil {
-		log.Fatalln(err)
-	}
-}
 
 type ABIDefinition struct {
 	Name     string    `json:"name"`
@@ -213,13 +113,7 @@ func (c *rawCompiledContract) UnmarshalJSON(data []byte) error {
 	return nil
 }
 
-func compileSourceFile(src string, opts CompilerOptions) (compiledContracts []CompiledContract, err error) {
-	f, err := os.Open(src)
-	if err != nil {
-		return
-	}
-	defer f.Close()
-
+func compileSource(src []byte, opts CompilerOptions) (compiledContracts []CompiledContract, err error) {
 	args := []string{"-", "--combined", "bin,metadata"}
 
 	if !opts.NoOptimize {
@@ -228,7 +122,7 @@ func compileSourceFile(src string, opts CompilerOptions) (compiledContracts []Co
 
 	// fmt.Printf("exec: solc %v\n", args)
 	cmd := exec.Command("solc", args...)
-	cmd.Stdin = f
+	cmd.Stdin = bytes.NewReader(src)
 	output, err := cmd.Output()
 	if err != nil {
 		return
