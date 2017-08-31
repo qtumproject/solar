@@ -7,27 +7,110 @@ import (
 	"log"
 	"os"
 	"os/exec"
+	"path"
+	"path/filepath"
 	"strings"
 
 	"github.com/ethereum/go-ethereum/crypto/sha3"
 
 	"github.com/pkg/errors"
+	"gopkg.in/alecthomas/kingpin.v2"
 )
 
-func main() {
-	log.Println(os.Args)
-	src := os.Args[1]
+var (
+	app         = kingpin.New("solar", "Solidity smart contract deployment management.")
+	buildCmd    = app.Command("build", "Compile Solidity contracts.")
+	buildTarget = buildCmd.Arg("target", "Source file or directory. Default is the current directory (`.`)").Default(".").String()
+)
 
-	contracts, err := compileSourceFile(src, CompilerOptions{})
+type Builder struct {
+	compilerOpts CompilerOptions
+	outputDir    string
+}
+
+func (b *Builder) Compile(filename string) error {
+	outputFilename := filename + ".json"
+
+	compiledContracts, err := compileSourceFile(filename, b.compilerOpts)
+	if err != nil {
+		return errors.Wrap(err, "compile")
+	}
+
+	outf, err := os.Create(outputFilename)
+	if err != nil {
+		return errors.Wrap(err, "output")
+	}
+	defer outf.Close()
+
+	contracts := make(map[string]CompiledContract)
+	for _, contract := range compiledContracts {
+		contracts[contract.Name] = contract
+	}
+
+	enc := json.NewEncoder(outf)
+	enc.SetIndent("", "\t")
+	err = enc.Encode(contracts)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func buildTask() (err error) {
+	fi, err := os.Stat(*buildTarget)
+
+	if os.IsNotExist(err) {
+		return errors.Errorf("Compile target not found: %s", *buildTarget)
+	}
+
+	if err != nil {
+		return
+	}
+
+	builder := Builder{
+		compilerOpts: CompilerOptions{},
+	}
+
+	if fi.IsDir() {
+		pat := path.Join(*buildTarget, "*.sol")
+		matches, err := filepath.Glob(pat)
+		if err != nil {
+			return errors.Wrap(err, "glob")
+		}
+
+		for _, filename := range matches {
+			fmt.Println("Compiling:", filename)
+			err := builder.Compile(filename)
+			if err != nil {
+				fmt.Println(err)
+			}
+		}
+	} else {
+		err := builder.Compile(*buildTarget)
+		if err != nil {
+			fmt.Println(err)
+		}
+	}
+
+	return
+}
+
+var cliTasks = map[string]func() error{
+	"build": buildTask,
+}
+
+func main() {
+	cmdName, err := app.Parse(os.Args[1:])
 	if err != nil {
 		log.Fatalln(err)
 	}
 
-	log.Println("contracts", contracts)
-
-	enc := json.NewEncoder(os.Stdout)
-	enc.SetIndent("", "\t")
-	enc.Encode(contracts)
+	task := cliTasks[cmdName]
+	err = task()
+	if err != nil {
+		log.Fatalln(err)
+	}
 }
 
 type ABIDefinition struct {
@@ -59,11 +142,11 @@ type CompilerOptions struct {
 }
 
 type CompiledContract struct {
-	Name string
-	ABI  []ABIDefinition
-	Bin  Bytes
+	Name string          `json:"name"`
+	ABI  []ABIDefinition `json:"abi"`
+	Bin  Bytes           `json:"bin"`
 	// KECAAK256 of bytecode without auxdata
-	BinKeccak256 Bytes
+	BinKeccak256 Bytes `json:"binhash"`
 }
 
 type rawCompilerOutput struct {
@@ -143,7 +226,7 @@ func compileSourceFile(src string, opts CompilerOptions) (compiledContracts []Co
 		args = append(args, "--optimize")
 	}
 
-	fmt.Printf("exec: solc %v\n", args)
+	// fmt.Printf("exec: solc %v\n", args)
 	cmd := exec.Command("solc", args...)
 	cmd.Stdin = f
 	output, err := cmd.Output()
@@ -151,7 +234,7 @@ func compileSourceFile(src string, opts CompilerOptions) (compiledContracts []Co
 		return
 	}
 
-	log.Println("output", string(output))
+	// log.Println("output", string(output))
 
 	var compilerOutput rawCompilerOutput
 	err = json.Unmarshal(output, &compilerOutput)
@@ -159,9 +242,9 @@ func compileSourceFile(src string, opts CompilerOptions) (compiledContracts []Co
 		return nil, errors.Wrap(err, "parse output")
 	}
 
-	fmt.Printf("%#v", compilerOutput)
+	// fmt.Printf("%#v", compilerOutput)
 	for name, c := range compilerOutput.Contracts {
-		fmt.Println(name, c.RawMetadata)
+		// fmt.Println(name, c.RawMetadata)
 
 		// name: <stdin>:ContractName
 		contractName := name
@@ -170,7 +253,7 @@ func compileSourceFile(src string, opts CompilerOptions) (compiledContracts []Co
 			contractName = parts[1]
 		}
 
-		log.Println("bin", c.Bin)
+		// log.Println("bin", c.Bin)
 
 		compiledContract := CompiledContract{
 			Name:         contractName,
