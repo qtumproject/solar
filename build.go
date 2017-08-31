@@ -66,7 +66,7 @@ func (b *Builder) build() (err error) {
 					<-limit
 					wg.Done()
 				}()
-				fmt.Println("Compiling:", filename)
+
 				err := b.compile(filename)
 				if err != nil {
 					fmt.Println(err)
@@ -86,8 +86,6 @@ func (b *Builder) build() (err error) {
 }
 
 func (b *Builder) compile(filename string) error {
-	outputFilename := filename + ".json"
-
 	f, err := os.Open(filename)
 	if err != nil {
 		return err
@@ -98,6 +96,17 @@ func (b *Builder) compile(filename string) error {
 	if err != nil {
 		return err
 	}
+
+	outputFilename := path.Base(filename) + ".json"
+	if b.outputDir != "" {
+		err := os.MkdirAll(b.outputDir, 0755)
+		if err != nil {
+			return err
+		}
+		outputFilename = path.Join(b.outputDir, outputFilename)
+	}
+
+	fmt.Printf("Compiling %s =>\n\t%s\n", filename, outputFilename)
 
 	compiledContracts, err := compileSource(source, b.compilerOpts)
 	if err != nil {
