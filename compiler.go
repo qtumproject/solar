@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"os"
 	"os/exec"
+	"path"
 	"strings"
 
 	"github.com/ethereum/go-ethereum/crypto/sha3"
@@ -137,7 +138,7 @@ func (err *CompilerError) Error() string {
 	return err.ErrorOutput
 }
 
-func compileSource(filename string, opts CompilerOptions) (compiledContracts []CompiledContract, err error) {
+func compileSource(filename string, opts CompilerOptions) (compiledContracts *CompiledContract, err error) {
 	_, err = os.Stat(filename)
 
 	if err != nil && os.IsNotExist(err) {
@@ -168,6 +169,8 @@ func compileSource(filename string, opts CompilerOptions) (compiledContracts []C
 	}
 
 	// log.Println("output", string(output))
+	basename := path.Base(filename)
+	mainContractName := strings.TrimSuffix(basename, path.Ext(basename))
 
 	var compilerOutput rawCompilerOutput
 	err = json.Unmarshal(output, &compilerOutput)
@@ -179,7 +182,7 @@ func compileSource(filename string, opts CompilerOptions) (compiledContracts []C
 	for name, c := range compilerOutput.Contracts {
 		// fmt.Println(name, c.RawMetadata)
 
-		// name: <stdin>:ContractName
+		// name: filepath:ContractName
 		contractName := name
 		parts := strings.Split(name, ":")
 		if len(parts) == 2 {
@@ -195,10 +198,13 @@ func compileSource(filename string, opts CompilerOptions) (compiledContracts []C
 			ABI:          c.Metadata.Output.ABI,
 		}
 
+		if contractName == mainContractName {
+			return &compiledContract, nil
+		}
+
 		// pretty.Println("abi", c.Metadata.Output.ABI)
 		// fmt.Println(cc)
-		compiledContracts = append(compiledContracts, compiledContract)
 	}
 
-	return
+	return nil, errors.Errorf("Cannot find contract %s in %s", mainContractName, filename)
 }
