@@ -1,6 +1,7 @@
 package solar
 
 import (
+	"fmt"
 	"log"
 	"os"
 
@@ -21,6 +22,7 @@ func Main() {
 	task := appTasks[cmdName]
 	err = task()
 	if err != nil {
-		log.Fatalln(err)
+		fmt.Println(err)
+		os.Exit(1)
 	}
 }

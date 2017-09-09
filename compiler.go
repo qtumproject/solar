@@ -5,6 +5,7 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
+	"os"
 	"os/exec"
 	"strings"
 
@@ -127,17 +128,41 @@ func (c *rawCompiledContract) UnmarshalJSON(data []byte) error {
 	return nil
 }
 
-func compileSource(src []byte, opts CompilerOptions) (compiledContracts []CompiledContract, err error) {
-	args := []string{"-", "--combined", "bin,metadata"}
+type CompilerError struct {
+	SourceFile  string
+	ErrorOutput string
+}
+
+func (err *CompilerError) Error() string {
+	return err.ErrorOutput
+}
+
+func compileSource(filename string, opts CompilerOptions) (compiledContracts []CompiledContract, err error) {
+	_, err = os.Stat(filename)
+
+	if err != nil && os.IsNotExist(err) {
+		return nil, errors.Errorf("file not found: %s", filename)
+	}
+
+	args := []string{filename, "--combined", "bin,metadata"}
 
 	if !opts.NoOptimize {
 		args = append(args, "--optimize")
 	}
 
+	var stderr bytes.Buffer
+
 	// fmt.Printf("exec: solc %v\n", args)
 	cmd := exec.Command("solc", args...)
-	cmd.Stdin = bytes.NewReader(src)
+	cmd.Stderr = &stderr
 	output, err := cmd.Output()
+	if _, ok := err.(*exec.ExitError); ok {
+		return nil, &CompilerError{
+			SourceFile:  filename,
+			ErrorOutput: stderr.String(),
+		}
+	}
+
 	if err != nil {
 		return
 	}
