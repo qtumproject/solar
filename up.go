@@ -8,7 +8,13 @@ import (
 	"log"
 	"net/http"
 	"time"
+
+	"github.com/kr/pretty"
 )
+
+func upTask(compiledSolFiles []string) {
+
+}
 
 // {"version": "1.1", "method": "confirmFruitPurchase", "params": [["apple", "orange", "mangoes"], 1.123], "id": "194521489"}
 
@@ -20,7 +26,7 @@ type JSONRPCRequest struct {
 
 type JSONRPCRersult struct {
 	RawResult json.RawMessage `json:"result"`
-	Error     json.RawMessage `json:"error"`
+	RawError  json.RawMessage `json:"error"`
 	ID        string          `json:"id"`
 }
 
@@ -31,7 +37,17 @@ type TransactionReceipt struct {
 	Address Bytes  `json:"address"`
 }
 
-func uploadContract(contract *CompiledContract, gasLimit int) (err error) {
+type uploader struct {
+	opts      uploaderOptions
+	contracts []*CompiledContract
+}
+
+type uploaderOptions struct {
+	GasLimit uint
+	GasPrice uint
+}
+
+func uploadContract(contract *CompiledContract, gasLimit, gasPrice int) (err error) {
 	// qtumd
 
 	// jsonReq := JSONRPCRequest{
@@ -60,6 +76,12 @@ func uploadContract(contract *CompiledContract, gasLimit int) (err error) {
 	// _, err = io.Copy(os.Stderr, res.Body)
 	log.Println("tx", tx)
 
+	// For ragtest, generate one.
+	_, err = callRPC("generate", 1)
+	if err != nil {
+		log.Println("generate 1 block", err)
+	}
+
 	for {
 		log.Println("look up account")
 		res, err := callRPC("getaccountinfo", tx.Address.String())
@@ -72,7 +94,7 @@ func uploadContract(contract *CompiledContract, gasLimit int) (err error) {
 			break
 		}
 
-		time.Sleep(3 * time.Second)
+		time.Sleep(1 * time.Second)
 	}
 
 	// loop keep looping to look up transaction
@@ -81,7 +103,7 @@ func uploadContract(contract *CompiledContract, gasLimit int) (err error) {
 }
 
 func callRPC(method string, params ...interface{}) (jsonResult *JSONRPCRersult, err error) {
-	url := "http://localhost:3889/"
+	url := "http://localhost:13889/"
 	user := "howard"
 	password := "yeh"
 
@@ -101,6 +123,7 @@ func callRPC(method string, params ...interface{}) (jsonResult *JSONRPCRersult, 
 	if err != nil {
 		return
 	}
+
 	userpass := fmt.Sprintf("%s:%s", user, password)
 	auth := base64.RawStdEncoding.EncodeToString([]byte(userpass))
 
@@ -119,6 +142,12 @@ func callRPC(method string, params ...interface{}) (jsonResult *JSONRPCRersult, 
 	err = dec.Decode(jsonResult)
 	if err != nil {
 		return
+	}
+
+	if res.StatusCode == 200 {
+		pretty.Println("json rpc result:", string(jsonResult.RawResult))
+	} else {
+		pretty.Println("json rpc result:", string(jsonResult.RawError))
 	}
 
 	return
