@@ -48,8 +48,12 @@ func openDeployedContractsRepository(filepath string) (repo *deployedContractsRe
 	}, nil
 }
 
-func (r *deployedContractsRepository) Add(name string, c DeployedContract) (err error) {
-	// TODO check if contract already exists
+func (r *deployedContractsRepository) Exists(name string) bool {
+	_, found := r.contracts[name]
+	return found
+}
+
+func (r *deployedContractsRepository) Set(name string, c DeployedContract) (err error) {
 	r.contracts[name] = c
 	return nil
 }

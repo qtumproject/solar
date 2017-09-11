@@ -14,6 +14,8 @@ import (
 func init() {
 	cmd := app.Command("deploy", "Compile Solidity contracts.")
 
+	force := cmd.Flag("force", "Overwrite previously deployed contract with the same name").Bool()
+
 	targets := cmd.Arg("targets", "Solidity contracts to deploy.").Strings()
 
 	appTasks["deploy"] = func() (err error) {
@@ -37,7 +39,7 @@ func init() {
 			dt := parseDeployTarget(target)
 
 			pretty.Println("deploy", dt)
-			err := deployer.CreateContract(dt.Name, dt.FilePath)
+			err := deployer.CreateContract(dt.Name, dt.FilePath, *force)
 			if err != nil {
 				fmt.Println("deploy:", err)
 			}
@@ -95,7 +97,11 @@ func NewDeployer(repoFile string) (*Deployer, error) {
 	}, nil
 }
 
-func (d *Deployer) CreateContract(name, filepath string) (err error) {
+func (d *Deployer) CreateContract(name, filepath string, overwrite bool) (err error) {
+	if !overwrite && d.repo.Exists(name) {
+		return errors.Errorf("Contract name alredy used: %s", name)
+	}
+
 	gasLimit := 300000
 
 	rpcURL, err := url.Parse(d.RPCHost)
@@ -129,7 +135,7 @@ func (d *Deployer) CreateContract(name, filepath string) (err error) {
 		CreatedAt:        time.Now(),
 	}
 
-	err = d.repo.Add(name, deployedContract)
+	err = d.repo.Set(name, deployedContract)
 	if err != nil {
 		return
 	}
