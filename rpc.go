@@ -5,7 +5,6 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
-	"log"
 	"net/http"
 	"net/url"
 )
@@ -60,7 +59,7 @@ func (rpc *qtumRPC) Call(result interface{}, method string, params ...interface{
 
 	// would user info be included in the URL?
 	urlString := url.String()
-	log.Println("rpc url", urlString)
+	// log.Println("rpc url", urlString)
 
 	req, err := http.NewRequest(http.MethodPost, urlString, &body)
 	if err != nil {
@@ -80,7 +79,7 @@ func (rpc *qtumRPC) Call(result interface{}, method string, params ...interface{
 	}
 	defer res.Body.Close()
 
-	log.Println("rpc http status", res.Status)
+	// log.Println("rpc http status", res.Status)
 
 	dec := json.NewDecoder(res.Body)
 	jsonResult := &jsonRPCRersult{}
