@@ -1,41 +1,10 @@
 package solar
 
-import (
-	"bytes"
-	"encoding/base64"
-	"encoding/json"
-	"fmt"
-	"log"
-	"net/http"
-	"time"
-
-	"github.com/kr/pretty"
-)
-
 func upTask(compiledSolFiles []string) {
 
 }
 
 // {"version": "1.1", "method": "confirmFruitPurchase", "params": [["apple", "orange", "mangoes"], 1.123], "id": "194521489"}
-
-type JSONRPCRequest struct {
-	Method string        `json:"method"`
-	Params []interface{} `json:"params"`
-	ID     string        `json:"id"`
-}
-
-type JSONRPCRersult struct {
-	RawResult json.RawMessage `json:"result"`
-	RawError  json.RawMessage `json:"error"`
-	ID        string          `json:"id"`
-}
-
-type TransactionReceipt struct {
-	TxID    Bytes  `json:"txid"`
-	Sender  string `json:"sender"`
-	Hash160 Bytes  `json:"hash160"`
-	Address Bytes  `json:"address"`
-}
 
 type uploader struct {
 	opts      uploaderOptions
@@ -47,6 +16,7 @@ type uploaderOptions struct {
 	GasPrice uint
 }
 
+/*
 func uploadContract(contract *CompiledContract, gasLimit, gasPrice int) (err error) {
 	// qtumd
 
@@ -102,53 +72,55 @@ func uploadContract(contract *CompiledContract, gasLimit, gasPrice int) (err err
 	return
 }
 
-func callRPC(method string, params ...interface{}) (jsonResult *JSONRPCRersult, err error) {
-	url := "http://localhost:13889/"
-	user := "howard"
-	password := "yeh"
+// func callRPC(method string, params ...interface{}) (jsonResult *JSONRPCRersult, err error) {
+// 	url := "http://localhost:13889/"
+// 	user := "howard"
+// 	password := "yeh"
 
-	jsonReq := JSONRPCRequest{
-		Method: method,
-		Params: params,
-	}
+// 	jsonReq := JSONRPCRequest{
+// 		Method: method,
+// 		Params: params,
+// 	}
 
-	var body bytes.Buffer
-	enc := json.NewEncoder(&body)
-	err = enc.Encode(&jsonReq)
-	if err != nil {
-		return
-	}
+// 	var body bytes.Buffer
+// 	enc := json.NewEncoder(&body)
+// 	err = enc.Encode(&jsonReq)
+// 	if err != nil {
+// 		return
+// 	}
 
-	req, err := http.NewRequest(http.MethodPost, url, &body)
-	if err != nil {
-		return
-	}
+// 	req, err := http.NewRequest(http.MethodPost, url, &body)
+// 	if err != nil {
+// 		return
+// 	}
 
-	userpass := fmt.Sprintf("%s:%s", user, password)
-	auth := base64.RawStdEncoding.EncodeToString([]byte(userpass))
+// 	userpass := fmt.Sprintf("%s:%s", user, password)
+// 	auth := base64.RawStdEncoding.EncodeToString([]byte(userpass))
 
-	req.Header.Set("Authorization", fmt.Sprintf("Basic %s", auth))
+// 	req.Header.Set("Authorization", fmt.Sprintf("Basic %s", auth))
 
-	res, err := http.DefaultClient.Do(req)
-	if err != nil {
-		return
-	}
-	defer res.Body.Close()
+// 	res, err := http.DefaultClient.Do(req)
+// 	if err != nil {
+// 		return
+// 	}
+// 	defer res.Body.Close()
 
-	log.Println("rpc http status", res.Status)
+// 	log.Println("rpc http status", res.Status)
 
-	dec := json.NewDecoder(res.Body)
-	jsonResult = &JSONRPCRersult{}
-	err = dec.Decode(jsonResult)
-	if err != nil {
-		return
-	}
+// 	dec := json.NewDecoder(res.Body)
+// 	jsonResult = &JSONRPCRersult{}
+// 	err = dec.Decode(jsonResult)
+// 	if err != nil {
+// 		return
+// 	}
 
-	if res.StatusCode == 200 {
-		pretty.Println("json rpc result:", string(jsonResult.RawResult))
-	} else {
-		pretty.Println("json rpc result:", string(jsonResult.RawError))
-	}
+// 	if res.StatusCode == 200 {
+// 		pretty.Println("json rpc result:", string(jsonResult.RawResult))
+// 	} else {
+// 		pretty.Println("json rpc result:", string(jsonResult.RawError))
+// 	}
 
-	return
-}
+// 	return
+// }
+
+*/

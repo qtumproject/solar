@@ -10,6 +10,8 @@ import (
 
 var (
 	app      = kingpin.New("solar", "Solidity smart contract deployment management.")
+	solarEnv = app.Flag("env", "Environment name").Envar("SOLAR_ENV").Default("development").String()
+	solarRPC = app.Flag("rpc", "RPC provider url").Envar("SOLAR_RPC").String()
 	appTasks = map[string]func() error{}
 )
 

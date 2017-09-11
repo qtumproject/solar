@@ -7,7 +7,6 @@ import (
 	"fmt"
 	"os"
 	"os/exec"
-	"path"
 	"strings"
 
 	"github.com/ethereum/go-ethereum/crypto/sha3"
@@ -169,8 +168,7 @@ func compileSource(filename string, opts CompilerOptions) (compiledContracts *Co
 	}
 
 	// log.Println("output", string(output))
-	basename := path.Base(filename)
-	mainContractName := strings.TrimSuffix(basename, path.Ext(basename))
+	mainContractName := basenameNoExt(filename)
 
 	var compilerOutput rawCompilerOutput
 	err = json.Unmarshal(output, &compilerOutput)
