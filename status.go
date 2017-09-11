@@ -2,26 +2,20 @@ package solar
 
 import (
 	"fmt"
-	"net/url"
-
-	"github.com/pkg/errors"
+	"os"
 )
 
 func init() {
 	_ = app.Command("status", "Compile Solidity contracts.")
 
 	appTasks["status"] = func() (err error) {
-		repo, err := openDeployedContractsRepository("solar.json")
-		if err != nil {
-			return
-		}
+		repo := solar.ContractsRepository()
+		rpc := solar.RPC()
 
-		rpcURL, err := url.Parse(*solarRPC)
-		if err != nil {
-			return errors.Wrap(err, "rpc host")
+		if len(repo.contracts) == 0 {
+			fmt.Println("No deployed contract yet")
+			os.Exit(0)
 		}
-
-		rpc := qtumRPC{rpcURL}
 
 		for name, contract := range repo.contracts {
 			if contract.Confirmed {

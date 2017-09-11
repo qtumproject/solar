@@ -4,28 +4,16 @@ import (
 	"fmt"
 	"log"
 	"math/rand"
-	"net/url"
 	"sync"
 	"time"
-
-	"github.com/pkg/errors"
 )
 
 func init() {
 	_ = app.Command("confirm", "Wait for contract creation to complete.")
 
 	appTasks["confirm"] = func() (err error) {
-		repo, err := openDeployedContractsRepository("solar.json")
-		if err != nil {
-			return
-		}
-
-		rpcURL, err := url.Parse(*solarRPC)
-		if err != nil {
-			return errors.Wrap(err, "rpc host")
-		}
-
-		rpc := qtumRPC{rpcURL}
+		repo := solar.ContractsRepository()
+		rpc := solar.RPC()
 
 		var wg sync.WaitGroup
 		wg.Add(len(repo.contracts))
@@ -52,15 +40,15 @@ func init() {
 			return
 		}
 
-		fmt.Println("All confirmed.")
+		fmt.Println("All contracts deployment confirmed")
 
 		return
 	}
 }
 
-func confirmDeployedContract(rpc qtumRPC, name string, c *DeployedContract) (err error) {
+func confirmDeployedContract(rpc *qtumRPC, name string, c *DeployedContract) (err error) {
 	for {
-		fmt.Printf("Checking %s", name, c.Address)
+		fmt.Printf("Checking %s\n", name)
 		result := make(map[string]interface{})
 		err := rpc.Call(&result, "getaccountinfo", c.Address)
 		if err, ok := err.(*jsonRPCError); ok {

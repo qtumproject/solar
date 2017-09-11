@@ -2,7 +2,6 @@ package solar
 
 import (
 	"fmt"
-	"net/url"
 	"strings"
 	"time"
 
@@ -26,11 +25,7 @@ func init() {
 			return errors.New("nothing to deploy")
 		}
 
-		deployer, err := NewDeployer("solar.json")
-		if err != nil {
-			return
-		}
-		deployer.RPCHost = *solarRPC
+		deployer := solar.Deployer()
 
 		for _, target := range targets {
 			dt := parseDeployTarget(target)
@@ -77,21 +72,8 @@ func parseDeployTarget(target string) deployTarget {
 }
 
 type Deployer struct {
-	Env     string
-	RPCHost string
-
-	repo *deployedContractsRepository
-}
-
-func NewDeployer(repoFile string) (*Deployer, error) {
-	repo, err := openDeployedContractsRepository("solar.json")
-	if err != nil {
-		return nil, err
-	}
-
-	return &Deployer{
-		repo: repo,
-	}, nil
+	rpc  *qtumRPC
+	repo *contractsRepository
 }
 
 func (d *Deployer) CreateContract(name, filepath string, overwrite bool) (err error) {
@@ -101,12 +83,7 @@ func (d *Deployer) CreateContract(name, filepath string, overwrite bool) (err er
 
 	gasLimit := 300000
 
-	rpcURL, err := url.Parse(d.RPCHost)
-	if err != nil {
-		return errors.Wrap(err, "rpc host")
-	}
-
-	rpc := qtumRPC{rpcURL}
+	rpc := d.rpc
 
 	contract, err := compileSource(filepath, CompilerOptions{})
 	if err != nil {

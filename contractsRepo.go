@@ -19,15 +19,15 @@ type DeployedContract struct {
 	Confirmed bool      `json:"confirmed"`
 }
 
-type deployedContractsRepository struct {
+type contractsRepository struct {
 	filepath  string
 	contracts DeployedContracts
 }
 
-func openDeployedContractsRepository(filepath string) (repo *deployedContractsRepository, err error) {
+func openContractsRepository(filepath string) (repo *contractsRepository, err error) {
 	f, err := os.Open(filepath)
 	if os.IsNotExist(err) {
-		return &deployedContractsRepository{
+		return &contractsRepository{
 			filepath:  filepath,
 			contracts: make(DeployedContracts),
 		}, nil
@@ -45,18 +45,18 @@ func openDeployedContractsRepository(filepath string) (repo *deployedContractsRe
 		return
 	}
 
-	return &deployedContractsRepository{
+	return &contractsRepository{
 		filepath:  filepath,
 		contracts: contracts,
 	}, nil
 }
 
-func (r *deployedContractsRepository) Exists(name string) bool {
+func (r *contractsRepository) Exists(name string) bool {
 	_, found := r.contracts[name]
 	return found
 }
 
-func (r *deployedContractsRepository) Confirm(name string) (err error) {
+func (r *contractsRepository) Confirm(name string) (err error) {
 	c, found := r.contracts[name]
 	if !found {
 		return errors.Errorf("Cannot unconfirm unknown contract %s", name)
@@ -67,12 +67,12 @@ func (r *deployedContractsRepository) Confirm(name string) (err error) {
 	return nil
 }
 
-func (r *deployedContractsRepository) Set(name string, c *DeployedContract) (err error) {
+func (r *contractsRepository) Set(name string, c *DeployedContract) (err error) {
 	r.contracts[name] = c
 	return nil
 }
 
-func (r *deployedContractsRepository) Commit() (err error) {
+func (r *contractsRepository) Commit() (err error) {
 	// TODO. do write & swap instead of truncat?
 	f, err := os.Create(r.filepath)
 	if err != nil {
