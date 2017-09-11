@@ -4,9 +4,11 @@ import (
 	"encoding/json"
 	"os"
 	"time"
+
+	"github.com/pkg/errors"
 )
 
-type DeployedContracts map[string]DeployedContract
+type DeployedContracts map[string]*DeployedContract
 
 type DeployedContract struct {
 	Name          string `json:"name"`
@@ -14,6 +16,7 @@ type DeployedContract struct {
 	TransactionID Bytes  `json:"txid"`
 	CompiledContract
 	CreatedAt time.Time `json:"createdAt"`
+	Confirmed bool      `json:"confirmed"`
 }
 
 type deployedContractsRepository struct {
@@ -53,7 +56,18 @@ func (r *deployedContractsRepository) Exists(name string) bool {
 	return found
 }
 
-func (r *deployedContractsRepository) Set(name string, c DeployedContract) (err error) {
+func (r *deployedContractsRepository) Confirm(name string) (err error) {
+	c, found := r.contracts[name]
+	if !found {
+		return errors.Errorf("Cannot unconfirm unknown contract %s", name)
+	}
+
+	c.Confirmed = true
+
+	return nil
+}
+
+func (r *deployedContractsRepository) Set(name string, c *DeployedContract) (err error) {
 	r.contracts[name] = c
 	return nil
 }

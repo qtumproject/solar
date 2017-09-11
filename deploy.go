@@ -2,7 +2,6 @@ package solar
 
 import (
 	"fmt"
-	"log"
 	"net/url"
 	"strings"
 	"time"
@@ -20,8 +19,6 @@ func init() {
 
 	appTasks["deploy"] = func() (err error) {
 		// verify before deploy
-		log.Println("env", *solarEnv)
-		log.Println("rpc", *solarRPC)
 
 		targets := *targets
 
@@ -38,10 +35,10 @@ func init() {
 		for _, target := range targets {
 			dt := parseDeployTarget(target)
 
-			pretty.Println("deploy", dt)
+			pretty.Printf("Deploying %s as %s\n", dt.FilePath, dt.Name)
 			err := deployer.CreateContract(dt.Name, dt.FilePath, *force)
 			if err != nil {
-				fmt.Println("deploy:", err)
+				fmt.Println(err)
 			}
 
 			// TODO: verify no duplicate target names
@@ -124,10 +121,10 @@ func (d *Deployer) CreateContract(name, filepath string, overwrite bool) (err er
 		return errors.Wrap(err, "createcontract")
 	}
 
-	fmt.Println("tx", tx.Address)
-	fmt.Println("contract name", contract.Name)
+	// fmt.Println("tx", tx.Address)
+	// fmt.Println("contract name", contract.Name)
 
-	deployedContract := DeployedContract{
+	deployedContract := &DeployedContract{
 		Name:             contract.Name,
 		CompiledContract: *contract,
 		TransactionID:    tx.TxID,
