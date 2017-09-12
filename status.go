@@ -6,7 +6,7 @@ import (
 )
 
 func init() {
-	_ = app.Command("status", "Compile Solidity contracts.")
+	_ = app.Command("status", "Show statuses of contracts")
 
 	appTasks["status"] = func() (err error) {
 		repo := solar.ContractsRepository()

@@ -5,7 +5,7 @@ import (
 )
 
 func init() {
-	_ = app.Command("confirm", "Wait for contract creation to complete.")
+	_ = app.Command("confirm", "Wait chain to confirm contracts.")
 
 	appTasks["confirm"] = func() (err error) {
 		repo := solar.ContractsRepository()
