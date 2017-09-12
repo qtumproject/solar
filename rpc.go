@@ -80,6 +80,9 @@ func (rpc *qtumRPC) Call(result interface{}, method string, params ...interface{
 	defer res.Body.Close()
 
 	// log.Println("rpc http status", res.Status)
+	if result == nil {
+		return
+	}
 
 	dec := json.NewDecoder(res.Body)
 	jsonResult := &jsonRPCRersult{}

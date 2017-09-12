@@ -2,6 +2,7 @@ package solar
 
 import (
 	"fmt"
+	"log"
 	"strings"
 	"time"
 
@@ -44,6 +45,15 @@ func init() {
 		newContracts := repo.UnconfirmedContracts()
 
 		if *noconfirm == false && len(newContracts) != 0 {
+			// Force local chain to generate a block immediately.
+			if *solarEnv == "development" || *solarEnv == "test" {
+				rpc := solar.RPC()
+				err := rpc.Call(nil, "generate", 1)
+				if err != nil {
+					log.Println(err)
+				}
+			}
+
 			err := repo.ConfirmAll()
 			if err != nil {
 				return err
