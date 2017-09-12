@@ -13,6 +13,7 @@ func init() {
 	cmd := app.Command("deploy", "Compile Solidity contracts.")
 
 	force := cmd.Flag("force", "Overwrite previously deployed contract with the same name").Bool()
+	noconfirm := cmd.Flag("no-confirm", "Don't wait for network to confirm deploy").Bool()
 
 	targets := cmd.Arg("targets", "Solidity contracts to deploy.").Strings()
 
@@ -35,9 +36,18 @@ func init() {
 			if err != nil {
 				fmt.Println(err)
 			}
-
 			// TODO: verify no duplicate target names
 			// TODO: verify all contracts before deploy
+		}
+
+		if *noconfirm == false {
+			repo := solar.ContractsRepository()
+			err := repo.ConfirmAll()
+			if err != nil {
+				return err
+			}
+
+			fmt.Println("All deployed contracts confirmed")
 		}
 
 		return
