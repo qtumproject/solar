@@ -2,7 +2,11 @@ package solar
 
 import (
 	"encoding/json"
+	"fmt"
+	"log"
+	"math/rand"
 	"os"
+	"sync"
 	"time"
 
 	"github.com/pkg/errors"
@@ -84,4 +88,58 @@ func (r *contractsRepository) Commit() (err error) {
 	enc.SetIndent("", "  ")
 
 	return enc.Encode(r.contracts)
+}
+
+// Confirm checks the RPC server to see if all the contracts
+// are confirmed by the blockchain.
+func (r *contractsRepository) ConfirmAll() (err error) {
+
+	var wg sync.WaitGroup
+	wg.Add(len(r.contracts))
+	for _, contract := range r.contracts {
+		if contract.Confirmed {
+			wg.Done()
+			continue
+		}
+
+		contract := contract
+		go func() {
+			err := r.confirmContract(contract)
+			if err != nil {
+				log.Println("err", err)
+			}
+			wg.Done()
+		}()
+	}
+	wg.Wait()
+
+	err = r.Commit()
+	if err != nil {
+		return
+	}
+
+	return
+}
+
+func (r *contractsRepository) confirmContract(c *DeployedContract) (err error) {
+	rpc := solar.RPC()
+
+	name := c.Name
+	for {
+		fmt.Printf("Checking %s\n", name)
+		result := make(map[string]interface{})
+		err := rpc.Call(&result, "getaccountinfo", c.Address)
+		if err, ok := err.(*jsonRPCError); ok {
+			fmt.Printf("%s\t%s\n", name, err)
+			nudge := rand.Intn(500)
+			time.Sleep(1*time.Second + time.Duration(nudge)*time.Millisecond)
+			continue
+		} else if err != nil {
+			return err
+		}
+
+		// fmt.Printf("confirmed\t%s\t%s\n", name, c.Address)
+		c.Confirmed = true
+		return nil
+	}
 }
