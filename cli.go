@@ -11,10 +11,11 @@ import (
 )
 
 var (
-	app      = kingpin.New("solar", "Solidity smart contract deployment management.")
-	solarEnv = app.Flag("env", "Environment name").Envar("SOLAR_ENV").Default("development").String()
-	solarRPC = app.Flag("rpc", "RPC provider url").Envar("SOLAR_RPC").String()
-	appTasks = map[string]func() error{}
+	app       = kingpin.New("solar", "Solidity smart contract deployment management.")
+	solarEnv  = app.Flag("env", "Environment name").Envar("SOLAR_ENV").Default("development").String()
+	solarRPC  = app.Flag("rpc", "RPC provider url").Envar("SOLAR_RPC").String()
+	solarRepo = app.Flag("repo", "Path of contracts repository").Envar("SOLAR_REPO").String()
+	appTasks  = map[string]func() error{}
 )
 
 type solarCLI struct {
@@ -44,7 +45,12 @@ func (c *solarCLI) RPC() *qtumRPC {
 // Open the file `solar.{SOLAR_ENV}.json` as contracts repository
 func (c *solarCLI) ContractsRepository() *contractsRepository {
 	c.repoOnce.Do(func() {
-		repoFilePath := fmt.Sprintf("solar.%s.json", *solarEnv)
+		var repoFilePath string
+		if *solarRepo != "" {
+			repoFilePath = *solarRepo
+		} else {
+			repoFilePath = fmt.Sprintf("solar.%s.json", *solarEnv)
+		}
 
 		repo, err := openContractsRepository(repoFilePath)
 		if err != nil {
