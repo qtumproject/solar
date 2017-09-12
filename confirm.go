@@ -1,9 +1,5 @@
 package solar
 
-import (
-	"fmt"
-)
-
 func init() {
 	_ = app.Command("confirm", "Wait chain to confirm contracts.")
 
@@ -14,7 +10,7 @@ func init() {
 			return
 		}
 
-		fmt.Println("All deployed contracts confirmed")
+		// fmt.Println("All deployed contracts confirmed")
 		return
 	}
 }

@@ -7,7 +7,6 @@ import (
 	"math/rand"
 	"os"
 	"sort"
-	"sync"
 	"time"
 
 	"github.com/pkg/errors"
@@ -55,6 +54,18 @@ func openContractsRepository(filepath string) (repo *contractsRepository, err er
 		filepath:  filepath,
 		contracts: contracts,
 	}, nil
+}
+
+func (r *contractsRepository) UnconfirmedContracts() []*DeployedContract {
+	var contracts []*DeployedContract
+
+	for _, contract := range r.contracts {
+		if !contract.Confirmed {
+			contracts = append(contracts, contract)
+		}
+	}
+
+	return contracts
 }
 
 func (r *contractsRepository) SortedContracts() []*DeployedContract {
@@ -112,25 +123,37 @@ func (r *contractsRepository) Commit() (err error) {
 // Confirm checks the RPC server to see if all the contracts
 // are confirmed by the blockchain.
 func (r *contractsRepository) ConfirmAll() (err error) {
+	contracts := r.UnconfirmedContracts()
 
-	var wg sync.WaitGroup
-	wg.Add(len(r.contracts))
-	for _, contract := range r.contracts {
-		if contract.Confirmed {
-			wg.Done()
-			continue
+	total := len(contracts)
+
+	reporter := solar.Reporter()
+
+	updateProgress := func(i int) {
+		reporter.Submit(eventProgress{
+			info: fmt.Sprintf("(%d/%d) Confirming contracts", i, total),
+		})
+
+		if i == total {
+			reporter.Submit(eventProgressEnd{
+				info: fmt.Sprintf("\U0001f680  All contracts confirmed"),
+			})
 		}
 
-		contract := contract
-		go func() {
-			err := r.confirmContract(contract)
-			if err != nil {
-				log.Println("err", err)
-			}
-			wg.Done()
-		}()
 	}
-	wg.Wait()
+
+	updateProgress(0)
+
+	for i, contract := range contracts {
+		contract := contract
+
+		err := r.confirmContract(contract)
+		if err != nil {
+			log.Println("err", err)
+		}
+
+		updateProgress(i + 1)
+	}
 
 	err = r.Commit()
 	if err != nil {
@@ -143,13 +166,13 @@ func (r *contractsRepository) ConfirmAll() (err error) {
 func (r *contractsRepository) confirmContract(c *DeployedContract) (err error) {
 	rpc := solar.RPC()
 
-	name := c.Name
+	// name := c.Name
 	for {
-		fmt.Printf("Checking %s\n", name)
+		// fmt.Printf("Checking %s\n", name)
 		result := make(map[string]interface{})
 		err := rpc.Call(&result, "getaccountinfo", c.Address)
 		if err, ok := err.(*jsonRPCError); ok {
-			fmt.Printf("%s\t%s\n", name, err)
+			// fmt.Printf("%s\t%s\n", name, err)
 			nudge := rand.Intn(500)
 			time.Sleep(1*time.Second + time.Duration(nudge)*time.Millisecond)
 			continue

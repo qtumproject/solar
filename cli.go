@@ -24,9 +24,28 @@ type solarCLI struct {
 
 	repo     *contractsRepository
 	repoOnce sync.Once
+
+	reporter     *events
+	reporterOnce sync.Once
 }
 
-var solar = &solarCLI{}
+var solar = &solarCLI{
+// reporter: &events{
+// 	in: make(chan interface{}),
+// }
+}
+
+func (c *solarCLI) Reporter() *events {
+	c.reporterOnce.Do(func() {
+		c.reporter = &events{
+			in: make(chan interface{}),
+		}
+
+		go c.reporter.Start()
+	})
+
+	return c.reporter
+}
 
 func (c *solarCLI) RPC() *qtumRPC {
 	c.rpcOnce.Do(func() {
