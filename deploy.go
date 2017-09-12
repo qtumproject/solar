@@ -31,10 +31,10 @@ func init() {
 		for _, target := range targets {
 			dt := parseDeployTarget(target)
 
-			pretty.Printf("Deploying %s as %s\n", dt.FilePath, dt.Name)
+			pretty.Printf("   \033[36mdeploy\033[0m %s => %s\n", dt.FilePath, dt.Name)
 			err := deployer.CreateContract(dt.Name, dt.FilePath, *force)
 			if err != nil {
-				fmt.Println(err)
+				fmt.Println("\u2757\ufe0f \033[36mdeploy\033[0m", err)
 			}
 			// TODO: verify no duplicate target names
 			// TODO: verify all contracts before deploy
@@ -46,8 +46,6 @@ func init() {
 			if err != nil {
 				return err
 			}
-
-			fmt.Println("All deployed contracts confirmed")
 		}
 
 		return
@@ -88,7 +86,7 @@ type Deployer struct {
 
 func (d *Deployer) CreateContract(name, filepath string, overwrite bool) (err error) {
 	if !overwrite && d.repo.Exists(name) {
-		return errors.Errorf("Contract name alredy used: %s", name)
+		return errors.Errorf("name already used: %s", name)
 	}
 
 	gasLimit := 300000
