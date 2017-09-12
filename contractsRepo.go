@@ -6,6 +6,7 @@ import (
 	"log"
 	"math/rand"
 	"os"
+	"sort"
 	"sync"
 	"time"
 
@@ -16,6 +17,7 @@ type DeployedContracts map[string]*DeployedContract
 
 type DeployedContract struct {
 	Name          string `json:"name"`
+	DeployName    string `json:"deployName"`
 	Address       Bytes  `json:"address"`
 	TransactionID Bytes  `json:"txid"`
 	CompiledContract
@@ -53,6 +55,23 @@ func openContractsRepository(filepath string) (repo *contractsRepository, err er
 		filepath:  filepath,
 		contracts: contracts,
 	}, nil
+}
+
+func (r *contractsRepository) SortedContracts() []*DeployedContract {
+	var contracts []*DeployedContract
+
+	for _, contract := range r.contracts {
+		contracts = append(contracts, contract)
+	}
+
+	sort.Slice(contracts, func(i, j int) bool {
+		c1 := contracts[i]
+		c2 := contracts[j]
+
+		return c1.CreatedAt.Unix() < c2.CreatedAt.Unix()
+	})
+
+	return contracts
 }
 
 func (r *contractsRepository) Exists(name string) bool {

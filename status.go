@@ -17,7 +17,9 @@ func init() {
 			os.Exit(0)
 		}
 
-		for name, contract := range repo.contracts {
+		for _, contract := range repo.SortedContracts() {
+			// FIXME: store deploy name in contract
+			name := contract.DeployName
 			if contract.Confirmed {
 				fmt.Printf("%s\t%s\tconfirmed\n", name, contract.Address)
 				continue

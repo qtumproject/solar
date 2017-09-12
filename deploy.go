@@ -113,6 +113,7 @@ func (d *Deployer) CreateContract(name, filepath string, overwrite bool) (err er
 
 	deployedContract := &DeployedContract{
 		Name:             contract.Name,
+		DeployName:       name,
 		CompiledContract: *contract,
 		TransactionID:    tx.TxID,
 		Address:          tx.Address,
