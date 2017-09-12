@@ -40,8 +40,10 @@ func init() {
 			// TODO: verify all contracts before deploy
 		}
 
-		if *noconfirm == false {
-			repo := solar.ContractsRepository()
+		repo := solar.ContractsRepository()
+		newContracts := repo.UnconfirmedContracts()
+
+		if *noconfirm == false && len(newContracts) != 0 {
 			err := repo.ConfirmAll()
 			if err != nil {
 				return err
