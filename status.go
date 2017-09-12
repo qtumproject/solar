@@ -10,7 +10,6 @@ func init() {
 
 	appTasks["status"] = func() (err error) {
 		repo := solar.ContractsRepository()
-		rpc := solar.RPC()
 
 		if len(repo.contracts) == 0 {
 			fmt.Println("No deployed contract yet")
@@ -21,18 +20,17 @@ func init() {
 			// FIXME: store deploy name in contract
 			name := contract.DeployName
 			if contract.Confirmed {
-				fmt.Printf("%s\t%s\tconfirmed\n", name, contract.Address)
-				continue
+				fmt.Printf("\u2705  %s\n", name)
+			} else {
+				fmt.Printf("   %s\n", name)
 			}
 
-			result := make(map[string]interface{})
-			err := rpc.Call(&result, "getaccountinfo", contract.Address)
-			if err != nil {
-				fmt.Printf("%s\t%s\n", name, err)
-				continue
-			}
+			fmt.Printf("        txid: %s\n", contract.TransactionID)
+			fmt.Printf("     address: %s\n", contract.Address)
+			fmt.Printf("   confirmed: %v\n", contract.Confirmed)
 
-			fmt.Printf("%s\t%s\tconfirmed\n", name, contract.Address)
+			fmt.Println("")
+
 		}
 
 		return nil
