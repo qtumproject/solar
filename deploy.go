@@ -15,6 +15,7 @@ func init() {
 
 	force := cmd.Flag("force", "Overwrite previously deployed contract with the same name").Bool()
 	noconfirm := cmd.Flag("no-confirm", "Don't wait for network to confirm deploy").Bool()
+	noFastConfirm := cmd.Flag("no-fast-confirm", "(dev) Don't generate block to confirm deploy immediately").Bool()
 
 	targets := cmd.Arg("targets", "Solidity contracts to deploy.").Strings()
 
@@ -46,7 +47,8 @@ func init() {
 
 		if *noconfirm == false && len(newContracts) != 0 {
 			// Force local chain to generate a block immediately.
-			if *solarEnv == "development" || *solarEnv == "test" {
+			allowFastConfirm := *solarEnv == "development" || *solarEnv == "test"
+			if *noFastConfirm == false && allowFastConfirm {
 				rpc := solar.RPC()
 				err := rpc.Call(nil, "generate", 1)
 				if err != nil {
