@@ -6,9 +6,11 @@ import (
 )
 
 func init() {
-	_ = app.Command("status", "Show statuses of contracts")
+	cli := app.Command("status", "Show statuses of contracts")
+	contractNames := cli.Arg("names", "contract names").Strings()
 
 	appTasks["status"] = func() (err error) {
+		names := *contractNames
 		repo := solar.ContractsRepository()
 
 		if len(repo.contracts) == 0 {
@@ -16,7 +18,22 @@ func init() {
 			os.Exit(0)
 		}
 
-		for _, contract := range repo.SortedContracts() {
+		var contracts []*DeployedContract
+		if len(names) != 0 {
+			for _, name := range names {
+				contract, found := repo.contracts[name]
+				if !found {
+					fmt.Printf("\u2757\ufe0f %s: not found\n", name)
+					continue
+				}
+				contracts = append(contracts, contract)
+			}
+			// contracts =
+		} else {
+			contracts = repo.SortedContracts()
+		}
+
+		for _, contract := range contracts {
 			// FIXME: store deploy name in contract
 			name := contract.DeployName
 			if contract.Confirmed {
