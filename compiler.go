@@ -5,6 +5,7 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
+	"os"
 	"os/exec"
 	"strings"
 
@@ -32,9 +33,23 @@ type Bytes []byte
 func (b Bytes) String() string {
 	return hex.EncodeToString(b)
 }
+
 func (b Bytes) MarshalJSON() ([]byte, error) {
 	hexstr := fmt.Sprintf("\"%s\"", b.String())
 	return []byte(hexstr), nil
+}
+
+func (b *Bytes) UnmarshalJSON(data []byte) error {
+	// strip the quotes \"\"
+	hexstr := data[1 : len(data)-1]
+	dst := make([]byte, hex.DecodedLen(len(hexstr)))
+	_, err := hex.Decode(dst, hexstr)
+	if err != nil {
+		return err
+	}
+	*b = dst
+
+	return nil
 }
 
 type CompilerOptions struct {
@@ -113,22 +128,47 @@ func (c *rawCompiledContract) UnmarshalJSON(data []byte) error {
 	return nil
 }
 
-func compileSource(src []byte, opts CompilerOptions) (compiledContracts []CompiledContract, err error) {
-	args := []string{"-", "--combined", "bin,metadata"}
+type CompilerError struct {
+	SourceFile  string
+	ErrorOutput string
+}
+
+func (err *CompilerError) Error() string {
+	return err.ErrorOutput
+}
+
+func compileSource(filename string, opts CompilerOptions) (compiledContracts *CompiledContract, err error) {
+	_, err = os.Stat(filename)
+
+	if err != nil && os.IsNotExist(err) {
+		return nil, errors.Errorf("file not found: %s", filename)
+	}
+
+	args := []string{filename, "--combined", "bin,metadata"}
 
 	if !opts.NoOptimize {
 		args = append(args, "--optimize")
 	}
 
+	var stderr bytes.Buffer
+
 	// fmt.Printf("exec: solc %v\n", args)
 	cmd := exec.Command("solc", args...)
-	cmd.Stdin = bytes.NewReader(src)
+	cmd.Stderr = &stderr
 	output, err := cmd.Output()
+	if _, ok := err.(*exec.ExitError); ok {
+		return nil, &CompilerError{
+			SourceFile:  filename,
+			ErrorOutput: stderr.String(),
+		}
+	}
+
 	if err != nil {
 		return
 	}
 
 	// log.Println("output", string(output))
+	mainContractName := basenameNoExt(filename)
 
 	var compilerOutput rawCompilerOutput
 	err = json.Unmarshal(output, &compilerOutput)
@@ -140,7 +180,7 @@ func compileSource(src []byte, opts CompilerOptions) (compiledContracts []Compil
 	for name, c := range compilerOutput.Contracts {
 		// fmt.Println(name, c.RawMetadata)
 
-		// name: <stdin>:ContractName
+		// name: filepath:ContractName
 		contractName := name
 		parts := strings.Split(name, ":")
 		if len(parts) == 2 {
@@ -156,10 +196,13 @@ func compileSource(src []byte, opts CompilerOptions) (compiledContracts []Compil
 			ABI:          c.Metadata.Output.ABI,
 		}
 
+		if contractName == mainContractName {
+			return &compiledContract, nil
+		}
+
 		// pretty.Println("abi", c.Metadata.Output.ABI)
 		// fmt.Println(cc)
-		compiledContracts = append(compiledContracts, compiledContract)
 	}
 
-	return
+	return nil, errors.Errorf("Cannot find contract %s in %s", mainContractName, filename)
 }
