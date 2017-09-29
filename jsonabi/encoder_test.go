@@ -150,3 +150,55 @@ func TestEncodeBytes(t *testing.T) {
 		runEncodingOneTest(is, e)
 	}
 }
+
+func TestEncodeFixedBytes(t *testing.T) {
+	is := assert.New(t)
+
+	examples := []encodingTestCase{
+		{"bytes4",
+			`["0xaa"]`,
+			false,
+			"aa00000000000000000000000000000000000000000000000000000000000000",
+		},
+		{"bytes4",
+			`["0xaabb"]`,
+			false,
+			"aabb000000000000000000000000000000000000000000000000000000000000",
+		},
+		{"bytes4",
+			`["0xaabbccdd"]`,
+			false,
+			"aabbccdd00000000000000000000000000000000000000000000000000000000",
+		},
+		{"bytes8",
+			`["0xaabbccdd00112233"]`,
+			false,
+			"aabbccdd00112233000000000000000000000000000000000000000000000000",
+		},
+		{"bytes16",
+			`["0xaabbccdd00112233"]`,
+			false,
+			"aabbccdd00112233000000000000000000000000000000000000000000000000",
+		},
+		{"bytes32",
+			`["0xfafa00000000000000000000000000abcd00000000000000000000000000fafa"]`,
+			false,
+			"fafa00000000000000000000000000abcd00000000000000000000000000fafa",
+		},
+		{"bytes32",
+			`["fafa00000000000000000000000000abcd00000000000000000000000000fafa"]`,
+			false,
+			"fafa00000000000000000000000000abcd00000000000000000000000000fafa",
+		},
+
+		{"bytes4",
+			`["0xaabbccdd001122"]`,
+			true,
+			"Expected 4 bytes",
+		},
+	}
+
+	for _, e := range examples {
+		runEncodingOneTest(is, e)
+	}
+}

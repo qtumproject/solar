@@ -100,16 +100,30 @@ func massageJSONValuesToABIValues(args abi.Arguments, vals []interface{}) ([]int
 			default:
 				return nil, errors.Errorf("Expected string got: %#v", val)
 			}
+		case abi.FixedBytesTy:
+			hexstr, ok := val.(string)
+			if !ok {
+				return nil, errors.Errorf("Expected hex string: %#v", val)
+			}
+
+			bytes, err := hexstringToBytes(hexstr)
+			if err != nil {
+				return nil, err
+			}
+
+			// pretty.Println("fixed bytes type", t)
+
+			fixedBytes, err := bytesToFixedBytesTy(bytes, t.SliceSize)
+			if err != nil {
+				return nil, err
+			}
+			vals2 = append(vals2, fixedBytes)
 		case abi.BytesTy:
 			switch val := val.(type) {
 			case string:
-				if strings.HasPrefix(val, "0x") {
-					val = val[2:]
-				}
-
-				bytes, err := hex.DecodeString(val)
+				bytes, err := hexstringToBytes(val)
 				if err != nil {
-					return nil, errors.Errorf("Expected hex string: %#v", val)
+					return nil, err
 				}
 				vals2 = append(vals2, bytes)
 			default:
@@ -121,6 +135,52 @@ func massageJSONValuesToABIValues(args abi.Arguments, vals []interface{}) ([]int
 	}
 
 	return vals2, nil
+}
+
+func hexstringToBytes(s string) ([]byte, error) {
+	if strings.HasPrefix(s, "0x") {
+		s = s[2:]
+	}
+
+	bytes, err := hex.DecodeString(s)
+	if err != nil {
+		return nil, errors.Errorf("Expected hex string: %#v", s)
+	}
+
+	return bytes, nil
+}
+
+func bytesToFixedBytesTy(bytes []byte, size int) (interface{}, error) {
+	// FIXME: Better way to convert slice to fixed byte array
+	if len(bytes) > size {
+		return nil, errors.Errorf("Expected %d bytes, got: %d", size, len(bytes))
+	}
+
+	nbytes := size
+	if size > len(bytes) {
+		nbytes = len(bytes)
+	}
+
+	switch size {
+	case 32:
+		var buf [32]byte
+		copy(buf[:], bytes[0:nbytes])
+		return buf, nil
+	case 16:
+		var buf [16]byte
+		copy(buf[:], bytes[0:nbytes])
+		return buf, nil
+	case 8:
+		var buf [8]byte
+		copy(buf[:], bytes[0:nbytes])
+		return buf, nil
+	case 4:
+		var buf [4]byte
+		copy(buf[:], bytes[0:nbytes])
+		return buf, nil
+	default:
+		return nil, errors.Errorf("Unsupported fixed bytes size %d", size)
+	}
 }
 
 func stringToInty(s string, size int) (interface{}, error) {
