@@ -2,6 +2,7 @@ package jsonabi
 
 import (
 	"bytes"
+	"encoding/hex"
 	"fmt"
 	"strings"
 	"testing"
@@ -99,13 +100,73 @@ func TestEncodeInty(t *testing.T) {
 		if e.errString != "" {
 			is.True(strings.HasPrefix(err.Error(), e.errString),
 				fmt.Sprintf("Error message should have prefix: %#v\n\tGot: %#v", e.errString, err.Error()))
-			// is.Contains(err, e.errString)
-			// is.EqualError(err, e.errString)
 		} else {
 			is.NoError(err)
 		}
+	}
+}
 
-		// fmt.Println("data", hex.EncodeToString(data))
+func TestEncodeStringy(t *testing.T) {
+	is := assert.New(t)
 
+	examples := []struct {
+		argType   string
+		val       string
+		errString string
+	}{
+		{"string", `["abcd"]`, ""},
+		{"string", `[1]`, "Expected string got"},
+	}
+
+	for _, e := range examples {
+		methodName := "testMethod"
+		testABI := testMethodABI(methodName, e.argType)
+
+		enc := Encoder{
+			abi: testABI,
+		}
+
+		_, err := enc.EncodeJSONValues(methodName, []byte(e.val))
+
+		if e.errString != "" {
+			is.True(strings.HasPrefix(err.Error(), e.errString),
+				fmt.Sprintf("Error message should have prefix: %#v\n\tGot: %#v", e.errString, err.Error()))
+		} else {
+			is.NoError(err)
+		}
+	}
+}
+
+func TestEncodeBytes(t *testing.T) {
+	is := assert.New(t)
+
+	examples := []struct {
+		argType   string
+		val       string
+		errString string
+	}{
+		{"bytes", `["ffaa00ee"]`, ""},
+		{"bytes", `["0xffaa00ee"]`, ""},
+		{"bytes", `["0xInvalidHexString"]`, "Expected hex string"},
+		{"bytes", `[1]`, "Expected hex string"},
+	}
+
+	for _, e := range examples {
+		methodName := "testMethod"
+		testABI := testMethodABI(methodName, e.argType)
+
+		enc := Encoder{
+			abi: testABI,
+		}
+
+		data, err := enc.EncodeJSONValues(methodName, []byte(e.val))
+		fmt.Println("data", hex.EncodeToString(data))
+
+		if e.errString != "" {
+			is.True(strings.HasPrefix(err.Error(), e.errString),
+				fmt.Sprintf("Error message should have prefix: %#v\n\tGot: %#v", e.errString, err.Error()))
+		} else {
+			is.NoError(err)
+		}
 	}
 }

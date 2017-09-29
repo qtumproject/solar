@@ -1,8 +1,10 @@
 package jsonabi
 
 import (
+	"encoding/hex"
 	"encoding/json"
 	"math/big"
+	"strings"
 
 	"github.com/pkg/errors"
 
@@ -40,6 +42,7 @@ func (e *Encoder) encodeValues(methodName string, vals ...interface{}) ([]byte, 
 	for i, arg := range method.Inputs {
 		val := vals[i]
 		t := arg.Type
+
 		switch t.T {
 		case abi.IntTy:
 			// string or float
@@ -61,7 +64,28 @@ func (e *Encoder) encodeValues(methodName string, vals ...interface{}) ([]byte, 
 			default:
 				return nil, errors.Errorf("Expected integer got: %v", val)
 			}
+		case abi.StringTy:
+			switch val := val.(type) {
+			case string:
+				vals2 = append(vals2, val)
+			default:
+				return nil, errors.Errorf("Expected string got: %#v", val)
+			}
+		case abi.BytesTy:
+			switch val := val.(type) {
+			case string:
+				if strings.HasPrefix(val, "0x") {
+					val = val[2:]
+				}
 
+				bytes, err := hex.DecodeString(val)
+				if err != nil {
+					return nil, errors.Errorf("Expected hex string: %#v", val)
+				}
+				vals2 = append(vals2, bytes)
+			default:
+				return nil, errors.Errorf("Expected hex string: %#v", val)
+			}
 		default:
 			vals2 = append(vals2, val)
 		}
