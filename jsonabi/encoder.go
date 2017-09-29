@@ -33,13 +33,42 @@ func (e *Encoder) encodeValues(methodName string, vals ...interface{}) ([]byte, 
 		return nil, errors.Errorf("Cannot find method: %s", methodName)
 	}
 
-	if len(method.Inputs) != len(vals) {
+	args := method.Inputs
+
+	if len(args) != len(vals) {
 		return nil, errors.Errorf("Expected %d arguments, got %d", len(method.Inputs), len(vals))
 	}
 
+	vals2, err := massageJSONValuesToABIValues(args, vals)
+	if err != nil {
+		return nil, err
+	}
+
+	return e.abi.Pack(methodName, vals2...)
+}
+
+func EncodeJSONValues(args abi.Arguments, jsonValues []byte) ([]byte, error) {
+	var vals []interface{}
+	err := json.Unmarshal(jsonValues, &vals)
+	if err != nil {
+		return nil, err
+	}
+
+	return EncodeValues(args, vals...)
+}
+
+func EncodeValues(args abi.Arguments, vals ...interface{}) ([]byte, error) {
+	vals2, err := massageJSONValuesToABIValues(args, vals)
+	if err != nil {
+		return nil, err
+	}
+	return args.Pack(vals2)
+}
+
+func massageJSONValuesToABIValues(args abi.Arguments, vals []interface{}) ([]interface{}, error) {
 	var vals2 []interface{}
 	// massage the input arguments
-	for i, arg := range method.Inputs {
+	for i, arg := range args {
 		val := vals[i]
 		t := arg.Type
 
@@ -91,7 +120,7 @@ func (e *Encoder) encodeValues(methodName string, vals ...interface{}) ([]byte, 
 		}
 	}
 
-	return e.abi.Pack(methodName, vals2...)
+	return vals2, nil
 }
 
 func stringToInty(s string, size int) (interface{}, error) {
