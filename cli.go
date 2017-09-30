@@ -99,7 +99,7 @@ func Main() {
 	task := appTasks[cmdName]
 	err = task()
 	if err != nil {
-		// fmt.Println(err)
+		fmt.Println(err)
 		os.Exit(1)
 	}
 }

@@ -38,7 +38,7 @@ func init() {
 
 		data, err := abi.Pack(*methodName, params...)
 		if err != nil {
-			return
+			return err
 		}
 
 		fmt.Println(hex.EncodeToString(data))
