@@ -2,7 +2,6 @@ package solar
 
 import (
 	"fmt"
-	"log"
 	"net/url"
 	"os"
 	"sync"
@@ -93,13 +92,14 @@ func (c *solarCLI) Deployer() *Deployer {
 func Main() {
 	cmdName, err := app.Parse(os.Args[1:])
 	if err != nil {
-		log.Fatalln(err)
+		fmt.Println(err)
+		os.Exit(1)
 	}
 
 	task := appTasks[cmdName]
 	err = task()
 	if err != nil {
-		fmt.Println(err)
+		// fmt.Println(err)
 		os.Exit(1)
 	}
 }

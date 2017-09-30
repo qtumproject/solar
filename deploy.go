@@ -3,10 +3,8 @@ package solar
 import (
 	"fmt"
 	"log"
-	"strings"
 	"time"
 
-	"github.com/kr/pretty"
 	"github.com/pkg/errors"
 )
 
@@ -17,29 +15,19 @@ func init() {
 	noconfirm := cmd.Flag("no-confirm", "Don't wait for network to confirm deploy").Bool()
 	noFastConfirm := cmd.Flag("no-fast-confirm", "(dev) Don't generate block to confirm deploy immediately").Bool()
 
-	targets := cmd.Arg("targets", "Solidity contracts to deploy.").Strings()
+	sourceFilePath := cmd.Arg("source", "Solidity contracts to deploy.").Required().String()
+	name := cmd.Arg("name", "Name of contract").Required().String()
+	// jsonParams := cmd.Arg("jsonParams", "Parameters as a json array").Default("[]").String()
 
 	appTasks["deploy"] = func() (err error) {
-		// verify before deploy
-
-		targets := *targets
-
-		if len(targets) == 0 {
-			return errors.New("nothing to deploy")
-		}
-
 		deployer := solar.Deployer()
 
-		for _, target := range targets {
-			dt := parseDeployTarget(target)
+		fmt.Printf("   \033[36mdeploy\033[0m %s => %s\n", *sourceFilePath, *name)
 
-			pretty.Printf("   \033[36mdeploy\033[0m %s => %s\n", dt.FilePath, dt.Name)
-			err := deployer.CreateContract(dt.Name, dt.FilePath, *force)
-			if err != nil {
-				fmt.Println("\u2757\ufe0f \033[36mdeploy\033[0m", err)
-			}
-			// TODO: verify no duplicate target names
-			// TODO: verify all contracts before deploy
+		err = deployer.CreateContract(*name, *sourceFilePath, *force)
+		if err != nil {
+			fmt.Println("\u2757\ufe0f \033[36mdeploy\033[0m", err)
+			return
 		}
 
 		repo := solar.ContractsRepository()
@@ -66,32 +54,32 @@ func init() {
 	}
 }
 
-type deployTarget struct {
-	Name     string
-	FilePath string
-}
+// type deployTarget struct {
+// 	Name     string
+// 	FilePath string
+// }
 
-func parseDeployTarget(target string) deployTarget {
-	parts := strings.Split(target, ":")
+// func parseDeployTarget(target string) deployTarget {
+// 	parts := strings.Split(target, ":")
 
-	filepath := parts[0]
+// 	filepath := parts[0]
 
-	var name string
-	if len(parts) == 2 {
-		name = parts[1]
-	} else {
-		name = stringLowerFirstRune(basenameNoExt(filepath))
-	}
+// 	var name string
+// 	if len(parts) == 2 {
+// 		name = parts[1]
+// 	} else {
+// 		name = stringLowerFirstRune(basenameNoExt(filepath))
+// 	}
 
-	// TODO verify name for valid JS name
+// 	// TODO verify name for valid JS name
 
-	t := deployTarget{
-		Name:     name,
-		FilePath: filepath,
-	}
+// 	t := deployTarget{
+// 		Name:     name,
+// 		FilePath: filepath,
+// 	}
 
-	return t
-}
+// 	return t
+// }
 
 type Deployer struct {
 	rpc  *qtumRPC
