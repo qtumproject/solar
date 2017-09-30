@@ -205,6 +205,8 @@ func (t Type) Pack(v interface{}) ([]byte, error) {
 		return t.encodeAddress(v)
 	case FixedBytesTy:
 		return t.encodeFixedBytes(v)
+	case BoolTy:
+		return t.encodeBool(v)
 	}
 
 	return nil, nil
@@ -221,6 +223,19 @@ func (t Type) hexStringToBytes(v string) ([]byte, error) {
 	}
 
 	return bytes, nil
+}
+
+func (t Type) encodeBool(v interface{}) ([]byte, error) {
+	switch v := v.(type) {
+	case bool:
+		if v {
+			return t.encodeUintTy(int64(1))
+		}
+
+		return t.encodeUintTy(int64(0))
+	default:
+		return nil, errors.Errorf("Expected %s got: %v", t.String(), v)
+	}
 }
 
 func (t Type) encodeString(v interface{}) ([]byte, error) {
@@ -309,11 +324,10 @@ func (t Type) encodeSlice(v interface{}) ([]byte, error) {
 
 // TODO: handle truncation
 func (t Type) encodeIntTy(v interface{}) ([]byte, error) {
-	if t.IsSlice {
-
-	}
-
 	switch v := v.(type) {
+	case int64:
+		i := big.NewInt(v)
+		return U256(i), nil
 	case float64:
 		f := big.NewFloat(v)
 		if !f.IsInt() {
@@ -330,6 +344,9 @@ func (t Type) encodeIntTy(v interface{}) ([]byte, error) {
 
 func (t Type) encodeUintTy(v interface{}) ([]byte, error) {
 	switch v := v.(type) {
+	case int64:
+		i := big.NewInt(v)
+		return U256(i), nil
 	case float64:
 		f := big.NewFloat(v)
 		if !f.IsInt() || f.Sign() == -1 {
