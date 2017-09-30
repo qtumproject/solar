@@ -193,9 +193,20 @@ func (t Type) Pack(v interface{}) ([]byte, error) {
 		return t.encodeIntTy(v)
 	case UintTy:
 		return t.encodeUintTy(v)
+	case StringTy:
+		return t.encodeString(v)
 	}
 
 	return nil, nil
+}
+
+func (t Type) encodeString(v interface{}) ([]byte, error) {
+	switch v := v.(type) {
+	case string:
+		return packBytesSlice([]byte(v), len(v)), nil
+	default:
+		return nil, errors.Errorf("Expected %s got: %v", t.String(), v)
+	}
 }
 
 func (t Type) encodeSlice(v interface{}) ([]byte, error) {

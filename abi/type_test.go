@@ -161,6 +161,34 @@ func TestEncodeArrays(t *testing.T) {
 	}
 }
 
+func TestEncodeString(t *testing.T) {
+	is := assert.New(t)
+
+	tests := []encodeTestCase{
+		{"abcd",
+			"string",
+			"" +
+				"0000000000000000000000000000000000000000000000000000000000000004" +
+				"6162636400000000000000000000000000000000000000000000000000000000",
+			""},
+		{"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+			"string",
+			"" +
+				"0000000000000000000000000000000000000000000000000000000000000040" +
+				"6161616161616161616161616161616161616161616161616161616161616161" +
+				"6262626262626262626262626262626262626262626262626262626262626262",
+			""},
+		{1,
+			"string",
+			"",
+			"Expected string got"},
+	}
+
+	for _, tt := range tests {
+		runEncodeTestCase(is, &tt)
+	}
+}
+
 // Tests that all allowed types get recognized by the type parser.
 func TestTypeRegexp(t *testing.T) {
 	tests := []struct {
