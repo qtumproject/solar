@@ -10,6 +10,7 @@ import (
 	"strings"
 
 	"github.com/ethereum/go-ethereum/crypto/sha3"
+	"github.com/hayeah/solar/abi"
 
 	"github.com/pkg/errors"
 )
@@ -62,6 +63,21 @@ type CompiledContract struct {
 	Bin  Bytes           `json:"bin"`
 	// KECAAK256 of bytecode without auxdata
 	BinKeccak256 Bytes `json:"binhash"`
+}
+
+func (c *CompiledContract) encodingABI() (*abi.ABI, error) {
+	jsonABI, err := json.Marshal(c.ABI)
+	if err != nil {
+		return nil, err
+	}
+
+	var encodingABI abi.ABI
+	err = json.Unmarshal(jsonABI, &encodingABI)
+	if err != nil {
+		return nil, err
+	}
+
+	return &encodingABI, nil
 }
 
 type rawCompilerOutput struct {
