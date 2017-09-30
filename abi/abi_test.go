@@ -168,7 +168,7 @@ func TestTestSlice(t *testing.T) {
 		t.FailNow()
 	}
 
-	slice := make([]uint64, 2)
+	slice := []interface{}{0, 0}
 	if _, err := abi.Pack("uint64[2]", slice); err != nil {
 		t.Error(err)
 	}
@@ -229,7 +229,7 @@ func ExampleJSON() {
 	if err != nil {
 		log.Fatalln(err)
 	}
-	out, err := abi.Pack("isBar", common.HexToAddress("01"))
+	out, err := abi.Pack("isBar", "0x0000000000000000000000000000000000000001")
 	if err != nil {
 		log.Fatalln(err)
 	}

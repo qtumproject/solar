@@ -346,7 +346,7 @@ func TestMethodPack(t *testing.T) {
 	sig = append(sig, common.LeftPadBytes([]byte{1}, 32)...)
 	sig = append(sig, common.LeftPadBytes([]byte{2}, 32)...)
 
-	packed, err := abi.Pack("slice", []uint32{1, 2})
+	packed, err := abi.Pack("slice", []interface{}{1, 2})
 	if err != nil {
 		t.Error(err)
 	}
@@ -362,7 +362,10 @@ func TestMethodPack(t *testing.T) {
 	sig = append(sig, common.LeftPadBytes(addrA[:], 32)...)
 	sig = append(sig, common.LeftPadBytes(addrB[:], 32)...)
 
-	packed, err = abi.Pack("sliceAddress", []common.Address{addrA, addrB})
+	packed, err = abi.Pack("sliceAddress", []interface{}{
+		"0100000000000000000000000000000000000000",
+		"0200000000000000000000000000000000000000",
+	})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -381,7 +384,16 @@ func TestMethodPack(t *testing.T) {
 	sig = append(sig, common.LeftPadBytes(addrC[:], 32)...)
 	sig = append(sig, common.LeftPadBytes(addrD[:], 32)...)
 
-	packed, err = abi.Pack("sliceMultiAddress", []common.Address{addrA, addrB}, []common.Address{addrC, addrD})
+	packed, err = abi.Pack("sliceMultiAddress",
+		[]interface{}{
+			"0100000000000000000000000000000000000000",
+			"0200000000000000000000000000000000000000",
+		},
+		[]interface{}{
+			"0300000000000000000000000000000000000000",
+			"0400000000000000000000000000000000000000",
+		})
+
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -393,7 +405,7 @@ func TestMethodPack(t *testing.T) {
 	sig = append(sig, common.LeftPadBytes([]byte{1}, 32)...)
 	sig = append(sig, common.LeftPadBytes([]byte{2}, 32)...)
 
-	packed, err = abi.Pack("slice256", []*big.Int{big.NewInt(1), big.NewInt(2)})
+	packed, err = abi.Pack("slice256", []interface{}{big.NewInt(1), big.NewInt(2)})
 	if err != nil {
 		t.Error(err)
 	}

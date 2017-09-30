@@ -132,7 +132,7 @@ func NewType(t string) (typ Type, err error) {
 
 	switch varType {
 	case "int":
-		typ.Kind, typ.Type = reflect.Ptr, big_t
+		typ.Kind, typ.Type = reflectIntKindAndType(false, varSize)
 		typ.Size = varSize
 		typ.T = IntTy
 	case "uint":
@@ -255,6 +255,8 @@ func (t Type) encodeBytes(v interface{}) ([]byte, error) {
 			return nil, err
 		}
 		return packBytesSlice(bytes, len(bytes)), nil
+	case []byte:
+		return packBytesSlice(v, len(v)), nil
 	default:
 		return nil, errors.Errorf("Expected %s in hex got: %v", t.String(), v)
 	}
@@ -269,6 +271,14 @@ func (t Type) encodeAddress(v interface{}) ([]byte, error) {
 		}
 
 		if len(bytes) != 20 {
+			return nil, errors.Errorf("Expected %s to have 20 bytes got: %v", t.String(), len(bytes))
+		}
+
+		return common.LeftPadBytes(bytes, 32), nil
+	case []byte:
+		bytes := v
+
+		if len(bytes) == 20 {
 			return nil, errors.Errorf("Expected %s to have 20 bytes got: %v", t.String(), len(bytes))
 		}
 
@@ -290,6 +300,12 @@ func (t Type) encodeFixedBytes(v interface{}) ([]byte, error) {
 			return nil, errors.Errorf("Expected %s to have %d bytes got: %d", t.String(), t.SliceSize, len(bytes))
 		}
 
+		return common.LeftPadBytes(bytes, 32), nil
+	case []byte:
+		bytes := v
+		if len(bytes) > t.SliceSize {
+			return nil, errors.Errorf("Expected %s to have %d bytes got: %d", t.String(), t.SliceSize, len(bytes))
+		}
 		return common.LeftPadBytes(bytes, 32), nil
 	default:
 		return nil, errors.Errorf("Expected %s in hex got: %v", t.String(), v)
@@ -332,6 +348,8 @@ func (t Type) encodeIntTy(v interface{}) ([]byte, error) {
 		}
 		i := big.NewInt(int64(n))
 		return U256(i), nil
+	case *big.Int:
+		return U256(v), nil
 	case float64:
 		f := big.NewFloat(v)
 		if !f.IsInt() {
@@ -361,6 +379,11 @@ func (t Type) encodeUintTy(v interface{}) ([]byte, error) {
 
 		i := big.NewInt(int64(n))
 		return U256(i), nil
+	case *big.Int:
+		if v.Sign() == -1 {
+			return nil, errors.Errorf("Expected %s got: %v", t.String(), v)
+		}
+		return U256(v), nil
 	case float64:
 		f := big.NewFloat(v)
 		if !f.IsInt() || f.Sign() == -1 {

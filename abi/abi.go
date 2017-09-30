@@ -65,15 +65,8 @@ func (abi ABI) Pack(name string, args ...interface{}) ([]byte, error) {
 		}
 		method = m
 	}
-	arguments, err := method.pack(args...)
-	if err != nil {
-		return nil, err
-	}
-	// Pack up the method ID too if not a constructor and return
-	if name == "" {
-		return arguments, nil
-	}
-	return append(method.Id(), arguments...), nil
+
+	return method.Pack(args...)
 }
 
 // these variable are used to determine certain types during type assertion for
