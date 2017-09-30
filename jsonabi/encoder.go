@@ -8,7 +8,7 @@ import (
 
 	"github.com/pkg/errors"
 
-	"github.com/ethereum/go-ethereum/accounts/abi"
+	"github.com/hayeah/solar/abi"
 )
 
 type Encoder struct {
@@ -72,7 +72,12 @@ func massageJSONValuesToABIValues(args abi.Arguments, vals []interface{}) ([]int
 		val := vals[i]
 		t := arg.Type
 
+		if t.IsSlice {
+			t.Elem
+		}
+
 		switch t.T {
+
 		case abi.IntTy:
 			// string or float
 			switch val := val.(type) {
@@ -197,25 +202,25 @@ func stringToInty(s string, size int) (interface{}, error) {
 // TODO check truncation
 func bigIntToInty(i *big.Int, size int) interface{} {
 	// go-ethereum's ABI encoding is picky about the exact type of a integer. Make it happy.
-	if size == 8 {
-		i := i.Int64()
-		return int8(i)
-	}
+	// if size == 8 {
+	// 	i := i.Int64()
+	// 	return int8(i)
+	// }
 
-	if size == 16 {
-		i := i.Int64()
-		return int16(i)
-	}
+	// if size == 16 {
+	// 	i := i.Int64()
+	// 	return int16(i)
+	// }
 
-	if size == 32 {
-		i := i.Int64()
-		return int32(i)
-	}
+	// if size == 32 {
+	// 	i := i.Int64()
+	// 	return int32(i)
+	// }
 
-	if size == 64 {
-		i := i.Int64()
-		return i
-	}
+	// if size == 64 {
+	// 	i := i.Int64()
+	// 	return i
+	// }
 
 	// For any other sizes use big.Int
 	return &i
@@ -228,25 +233,25 @@ func bigfloatToInty(f *big.Float, size int) (interface{}, error) {
 	}
 
 	// go-ethereum's ABI encoding is picky about the exact type of a integer. Make it happy.
-	if size == 8 {
-		i, _ := f.Int64()
-		return int8(i), nil
-	}
+	// if size == 8 {
+	// 	i, _ := f.Int64()
+	// 	return int8(i), nil
+	// }
 
-	if size == 16 {
-		i, _ := f.Int64()
-		return int16(i), nil
-	}
+	// if size == 16 {
+	// 	i, _ := f.Int64()
+	// 	return int16(i), nil
+	// }
 
-	if size == 32 {
-		i, _ := f.Int64()
-		return int32(i), nil
-	}
+	// if size == 32 {
+	// 	i, _ := f.Int64()
+	// 	return int32(i), nil
+	// }
 
-	if size == 64 {
-		i, _ := f.Int64()
-		return i, nil
-	}
+	// if size == 64 {
+	// 	i, _ := f.Int64()
+	// 	return i, nil
+	// }
 
 	// For any other sizes use big.Int
 	bigI, _ := f.Int(nil)

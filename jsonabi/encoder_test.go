@@ -11,7 +11,7 @@ import (
 
 	"github.com/stretchr/testify/assert"
 
-	"github.com/ethereum/go-ethereum/accounts/abi"
+	"github.com/hayeah/solar/abi"
 )
 
 func testMethodABI(typeName string) abi.Arguments {

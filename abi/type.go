@@ -18,9 +18,12 @@ package abi
 
 import (
 	"fmt"
+	"math/big"
 	"reflect"
 	"regexp"
 	"strconv"
+
+	"github.com/pkg/errors"
 )
 
 const (
@@ -126,7 +129,7 @@ func NewType(t string) (typ Type, err error) {
 
 	switch varType {
 	case "int":
-		typ.Kind, typ.Type = reflectIntKindAndType(false, varSize)
+		typ.Kind, typ.Type = reflect.Ptr, big_t
 		typ.Size = varSize
 		typ.T = IntTy
 	case "uint":
@@ -173,6 +176,89 @@ func NewType(t string) (typ Type, err error) {
 // String implements Stringer
 func (t Type) String() (out string) {
 	return t.stringKind
+}
+
+func (t Type) Pack(v interface{}) ([]byte, error) {
+	// TODO flatten pointer if necessary
+	if t.IsSlice || t.IsArray {
+		return t.encodeSlice(v)
+	}
+
+	if v == nil {
+		return nil, errors.Errorf("Expected %s got nil", t.String())
+	}
+
+	switch t.T {
+	case IntTy:
+		return t.encodeIntTy(v)
+	case UintTy:
+		return t.encodeUintTy(v)
+	}
+
+	return nil, nil
+}
+
+func (t Type) encodeSlice(v interface{}) ([]byte, error) {
+	var vv []interface{}
+	if v != nil {
+		var ok bool
+		vv, ok = v.([]interface{})
+		if !ok {
+			return nil, errors.Errorf("Expected %s got: %v", t.String(), v)
+		}
+	}
+
+	var packed []byte
+	for i := 0; i < len(vv); i++ {
+		data, err := t.Elem.Pack(vv[i])
+		if err != nil {
+			return nil, errors.Wrapf(err, "%s at %d", t.String(), i)
+		}
+		packed = append(packed, data...)
+	}
+
+	if t.IsSlice {
+		return packBytesSlice(packed, len(vv)), nil
+	}
+
+	return packed, nil
+}
+
+// TODO: handle truncation
+func (t Type) encodeIntTy(v interface{}) ([]byte, error) {
+	if t.IsSlice {
+
+	}
+
+	switch v := v.(type) {
+	case float64:
+		f := big.NewFloat(v)
+		if !f.IsInt() {
+			return nil, errors.Errorf("Expected %s got: %v", t.String(), f.String())
+		}
+
+		i, _ := f.Int(nil)
+
+		return U256(i), nil
+	default:
+		return nil, errors.Errorf("Expected %s got: %v", t.String(), v)
+	}
+}
+
+func (t Type) encodeUintTy(v interface{}) ([]byte, error) {
+	switch v := v.(type) {
+	case float64:
+		f := big.NewFloat(v)
+		if !f.IsInt() || f.Sign() == -1 {
+			return nil, errors.Errorf("Expected %s got: %v", t.String(), f.String())
+		}
+
+		i, _ := f.Int(nil)
+
+		return U256(i), nil
+	default:
+		return nil, errors.Errorf("Expected %s got: %v", t.String(), v)
+	}
 }
 
 func (t Type) pack(v reflect.Value) ([]byte, error) {
