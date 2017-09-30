@@ -325,13 +325,17 @@ func (t Type) encodeSlice(v interface{}) ([]byte, error) {
 // TODO: handle truncation
 func (t Type) encodeIntTy(v interface{}) ([]byte, error) {
 	switch v := v.(type) {
-	case int64:
-		i := big.NewInt(v)
+	case int, int8, int16, int32, int64:
+		n, err := strconv.Atoi(fmt.Sprintf("%d", v))
+		if err != nil {
+			return nil, errors.Errorf("Expected %s got: %v", t.String(), v)
+		}
+		i := big.NewInt(int64(n))
 		return U256(i), nil
 	case float64:
 		f := big.NewFloat(v)
 		if !f.IsInt() {
-			return nil, errors.Errorf("Expected %s got: %v", t.String(), f.String())
+			return nil, errors.Errorf("Expected %s got: %v", t.String(), v)
 		}
 
 		i, _ := f.Int(nil)
@@ -344,8 +348,18 @@ func (t Type) encodeIntTy(v interface{}) ([]byte, error) {
 
 func (t Type) encodeUintTy(v interface{}) ([]byte, error) {
 	switch v := v.(type) {
-	case int64:
-		i := big.NewInt(v)
+	case int, int8, int16, int32, int64,
+		uint, uint8, uint16, uint32, uint64:
+		n, err := strconv.Atoi(fmt.Sprintf("%d", v))
+		if err != nil {
+			return nil, errors.Errorf("Expected %s got: %v", t.String(), v)
+		}
+
+		if n < 0 {
+			return nil, errors.Errorf("Expected %s got: %v", t.String(), v)
+		}
+
+		i := big.NewInt(int64(n))
 		return U256(i), nil
 	case float64:
 		f := big.NewFloat(v)

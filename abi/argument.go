@@ -63,12 +63,12 @@ func (types Arguments) Pack(vals []interface{}) ([]byte, error) {
 	var variableInput []byte
 
 	var ret []byte
-	for i, a := range vals {
+	for i, val := range vals {
 		input := types[i]
 		// pack the input
-		packed, err := input.Type.pack(reflect.ValueOf(a))
+		packed, err := input.Type.Pack(val)
 		if err != nil {
-			return nil, fmt.Errorf("%dth value: %v", i, err)
+			return nil, fmt.Errorf("[%d]: %v", i, err)
 		}
 
 		// check for a slice type (string, bytes, slice)
