@@ -189,6 +189,94 @@ func TestEncodeString(t *testing.T) {
 	}
 }
 
+func TestEncodeBytes(t *testing.T) {
+	is := assert.New(t)
+
+	tests := []encodeTestCase{
+		{"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+			"bytes",
+			"" +
+				"0000000000000000000000000000000000000000000000000000000000000040" +
+				"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa" +
+				"bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+			""},
+		{"0xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+			"bytes",
+			"" +
+				"0000000000000000000000000000000000000000000000000000000000000040" +
+				"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa" +
+				"bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+			""},
+		{1,
+			"bytes",
+			"",
+			"Expected bytes in hex got"},
+	}
+
+	for _, tt := range tests {
+		runEncodeTestCase(is, &tt)
+	}
+}
+func TestEncodeAddress(t *testing.T) {
+	is := assert.New(t)
+
+	tests := []encodeTestCase{
+		{"0xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+			"address",
+			"000000000000000000000000aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+			""},
+		{"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+			"address",
+			"000000000000000000000000aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+			""},
+		{"aa",
+			"address",
+			"",
+			"Expected address to have 20 bytes got: 1"},
+		{1,
+			"address",
+			"",
+			"Expected address in hex got"},
+	}
+
+	for _, tt := range tests {
+		runEncodeTestCase(is, &tt)
+	}
+}
+
+func TestEncodeFixedBytes(t *testing.T) {
+	is := assert.New(t)
+
+	tests := []encodeTestCase{
+		{"0xaa",
+			"bytes4",
+			"00000000000000000000000000000000000000000000000000000000000000aa",
+			""},
+		{"0xaabbccdd",
+			"bytes4",
+			"00000000000000000000000000000000000000000000000000000000aabbccdd",
+			""},
+
+		{"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+			"bytes32",
+			"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+			""},
+
+		{"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+			"bytes4",
+			"",
+			"Expected bytes4 to have 4 bytes got: 32"},
+		{1,
+			"bytes4",
+			"",
+			"Expected bytes4 in hex got"},
+	}
+
+	for _, tt := range tests {
+		runEncodeTestCase(is, &tt)
+	}
+}
+
 // Tests that all allowed types get recognized by the type parser.
 func TestTypeRegexp(t *testing.T) {
 	tests := []struct {

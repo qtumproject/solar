@@ -17,12 +17,15 @@
 package abi
 
 import (
+	"encoding/hex"
 	"fmt"
 	"math/big"
 	"reflect"
 	"regexp"
 	"strconv"
+	"strings"
 
+	"github.com/ethereum/go-ethereum/common"
 	"github.com/pkg/errors"
 )
 
@@ -179,8 +182,9 @@ func (t Type) String() (out string) {
 }
 
 func (t Type) Pack(v interface{}) ([]byte, error) {
-	// TODO flatten pointer if necessary
-	if t.IsSlice || t.IsArray {
+	// pretty.Println("type", t)
+
+	if (t.IsSlice || t.IsArray) && t.T != BytesTy && t.T != FixedBytesTy && t.T != FunctionTy {
 		return t.encodeSlice(v)
 	}
 
@@ -195,9 +199,28 @@ func (t Type) Pack(v interface{}) ([]byte, error) {
 		return t.encodeUintTy(v)
 	case StringTy:
 		return t.encodeString(v)
+	case BytesTy:
+		return t.encodeBytes(v)
+	case AddressTy:
+		return t.encodeAddress(v)
+	case FixedBytesTy:
+		return t.encodeFixedBytes(v)
 	}
 
 	return nil, nil
+}
+
+func (t Type) hexStringToBytes(v string) ([]byte, error) {
+	if strings.HasPrefix(v, "0x") {
+		v = v[2:]
+	}
+
+	bytes, err := hex.DecodeString(v)
+	if err != nil {
+		return nil, errors.Errorf("Expected %s in hex got: %v", t.String(), v)
+	}
+
+	return bytes, nil
 }
 
 func (t Type) encodeString(v interface{}) ([]byte, error) {
@@ -206,6 +229,55 @@ func (t Type) encodeString(v interface{}) ([]byte, error) {
 		return packBytesSlice([]byte(v), len(v)), nil
 	default:
 		return nil, errors.Errorf("Expected %s got: %v", t.String(), v)
+	}
+}
+
+func (t Type) encodeBytes(v interface{}) ([]byte, error) {
+	switch v := v.(type) {
+	case string:
+		bytes, err := t.hexStringToBytes(v)
+		if err != nil {
+			return nil, err
+		}
+		return packBytesSlice(bytes, len(bytes)), nil
+	default:
+		return nil, errors.Errorf("Expected %s in hex got: %v", t.String(), v)
+	}
+}
+
+func (t Type) encodeAddress(v interface{}) ([]byte, error) {
+	switch v := v.(type) {
+	case string:
+		bytes, err := t.hexStringToBytes(v)
+		if err != nil {
+			return nil, err
+		}
+
+		if len(bytes) != 20 {
+			return nil, errors.Errorf("Expected %s to have 20 bytes got: %v", t.String(), len(bytes))
+		}
+
+		return common.LeftPadBytes(bytes, 32), nil
+	default:
+		return nil, errors.Errorf("Expected %s in hex got: %v", t.String(), v)
+	}
+}
+
+func (t Type) encodeFixedBytes(v interface{}) ([]byte, error) {
+	switch v := v.(type) {
+	case string:
+		bytes, err := t.hexStringToBytes(v)
+		if err != nil {
+			return nil, err
+		}
+
+		if len(bytes) > t.SliceSize {
+			return nil, errors.Errorf("Expected %s to have %d bytes got: %d", t.String(), t.SliceSize, len(bytes))
+		}
+
+		return common.LeftPadBytes(bytes, 32), nil
+	default:
+		return nil, errors.Errorf("Expected %s in hex got: %v", t.String(), v)
 	}
 }
 
