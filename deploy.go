@@ -1,6 +1,7 @@
 package solar
 
 import (
+	"encoding/json"
 	"fmt"
 	"log"
 	"time"
@@ -17,14 +18,14 @@ func init() {
 
 	sourceFilePath := cmd.Arg("source", "Solidity contracts to deploy.").Required().String()
 	name := cmd.Arg("name", "Name of contract").Required().String()
-	// jsonParams := cmd.Arg("jsonParams", "Parameters as a json array").Default("[]").String()
+	jsonParams := cmd.Arg("jsonParams", "Constructor params as a json array").Default("").String()
 
 	appTasks["deploy"] = func() (err error) {
 		deployer := solar.Deployer()
 
 		fmt.Printf("   \033[36mdeploy\033[0m %s => %s\n", *sourceFilePath, *name)
 
-		err = deployer.CreateContract(*name, *sourceFilePath, *force)
+		err = deployer.CreateContract(*name, *sourceFilePath, []byte(*jsonParams), *force)
 		if err != nil {
 			fmt.Println("\u2757\ufe0f \033[36mdeploy\033[0m", err)
 			return
@@ -54,39 +55,12 @@ func init() {
 	}
 }
 
-// type deployTarget struct {
-// 	Name     string
-// 	FilePath string
-// }
-
-// func parseDeployTarget(target string) deployTarget {
-// 	parts := strings.Split(target, ":")
-
-// 	filepath := parts[0]
-
-// 	var name string
-// 	if len(parts) == 2 {
-// 		name = parts[1]
-// 	} else {
-// 		name = stringLowerFirstRune(basenameNoExt(filepath))
-// 	}
-
-// 	// TODO verify name for valid JS name
-
-// 	t := deployTarget{
-// 		Name:     name,
-// 		FilePath: filepath,
-// 	}
-
-// 	return t
-// }
-
 type Deployer struct {
 	rpc  *qtumRPC
 	repo *contractsRepository
 }
 
-func (d *Deployer) CreateContract(name, filepath string, overwrite bool) (err error) {
+func (d *Deployer) CreateContract(name, filepath string, jsonParams []byte, overwrite bool) (err error) {
 	if !overwrite && d.repo.Exists(name) {
 		return errors.Errorf("name already used: %s", name)
 	}
@@ -100,9 +74,36 @@ func (d *Deployer) CreateContract(name, filepath string, overwrite bool) (err er
 		return errors.Wrap(err, "compile")
 	}
 
+	abi, err := contract.encodingABI()
+	if err != nil {
+		return errors.Wrap(err, "abi")
+	}
+
+	constructor := abi.Constructor
+
+	if len(constructor.Inputs) == 0 && len(jsonParams) != 0 {
+		return errors.New("does not expect constructor params")
+	}
+
+	bin := contract.Bin
+	if len(constructor.Inputs) != 0 {
+		var params []interface{}
+		err = json.Unmarshal(jsonParams, &params)
+		if err != nil {
+			return errors.Errorf("expected constructor params in JSON, got: %#v", string(jsonParams))
+		}
+
+		packedParams, err := abi.Constructor.Pack(params...)
+		if err != nil {
+			return errors.Wrap(err, "constructor")
+		}
+
+		bin = append(bin, packedParams...)
+	}
+
 	var tx TransactionReceipt
 
-	err = rpc.Call(&tx, "createcontract", contract.Bin.String(), gasLimit)
+	err = rpc.Call(&tx, "createcontract", bin, gasLimit)
 
 	if err != nil {
 		return errors.Wrap(err, "createcontract")

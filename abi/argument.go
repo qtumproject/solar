@@ -68,7 +68,7 @@ func (types Arguments) Pack(vals []interface{}) ([]byte, error) {
 		// pack the input
 		packed, err := input.Type.Pack(val)
 		if err != nil {
-			return nil, fmt.Errorf("[%d]: %v", i, err)
+			return nil, fmt.Errorf("argv[%d] '%s': %v", i, input.Name, err)
 		}
 
 		// check for a slice type (string, bytes, slice)
