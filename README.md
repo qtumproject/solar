@@ -111,3 +111,53 @@ $ solar deploy contracts/A.sol daisy --force
 ```
 
 In `solar.development.json` you should see that the address had changed.
+
+# Constructor Parameters
+
+Suppose that we have a contract that expects 2 constructor parameters, `_a` and `_b`:
+
+```
+pragma solidity ^0.4.11;
+
+contract AB {
+  uint256 a;
+  int256 b;
+
+  function AB(uint256 _a, int256 _b) {
+    a = _a;
+    b = _b;
+  }
+
+  function setA(uint256 _a) {
+    a = _a;
+  }
+
+  function setB(int256 _b) {
+    b = _b;
+  }
+
+  function getA() returns(uint256) {
+    return a;
+  }
+
+  function getB() returns(int256) {
+    return b;
+  }
+}
+```
+
+You can pass in the constructor parameters as a JSON array:
+
+```
+$ solar deploy contracts/AB.sol ab '[1, 2]'
+   deploy contracts/AB.sol => ab
+🚀  All contracts confirmed
+```
+
+The parameter values are type checked. It fails if you try to pass in a negative integer for the unsigned integer `_a`:
+
+```
+$ solar deploy contracts/AB.sol ab '[-1, 2]' --force
+   deploy contracts/AB.sol => ab
+❗️  deploy constructor: argv[0] '_a': Expected uint256 got: -1
+```
