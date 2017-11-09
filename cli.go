@@ -2,6 +2,7 @@ package solar
 
 import (
 	"fmt"
+	"log"
 	"net/url"
 	"os"
 	"sync"
@@ -47,11 +48,18 @@ func (c *solarCLI) Reporter() *events {
 }
 
 func (c *solarCLI) RPC() *qtumRPC {
+	log := log.New(os.Stderr, "", log.Lshortfile)
 	c.rpcOnce.Do(func() {
-		rpcURL, err := url.Parse(*solarRPC)
+		rawurl := *solarRPC
+
+		if rawurl == "" {
+			log.Fatalln("Please specify RPC url by setting QTUM_RPC or using the --rpc flag")
+		}
+
+		rpcURL, err := url.ParseRequestURI(rawurl)
+
 		if err != nil {
-			fmt.Println("Invalid RPC URL:", rpcURL)
-			os.Exit(1)
+			log.Fatalf("Invalid RPC url: %#v", rawurl)
 		}
 
 		c.rpc = &qtumRPC{rpcURL}
