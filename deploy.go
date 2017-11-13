@@ -1,8 +1,12 @@
 package solar
 
 import (
+	"encoding/json"
 	"fmt"
 	"log"
+	"time"
+
+	"github.com/pkg/errors"
 )
 
 func init() {
@@ -17,17 +21,36 @@ func init() {
 	jsonParams := cmd.Arg("jsonParams", "Constructor params as a json array").Default("").String()
 
 	appTasks["deploy"] = func() (err error) {
-		deployer := solar.Deployer()
+		filename := *sourceFilePath
+
+		compiler := Compiler{
+			Filename: filename,
+		}
+
+		contract, err := compiler.Compile()
+		if err != nil {
+			return errors.Wrap(err, "compile")
+		}
+
+		repo := solar.ContractsRepository()
+
+		deployer := &Deployer{
+			Contract: contract,
+			Filename: filename,
+			Params:   []byte(*jsonParams),
+
+			rpc:  solar.RPC(),
+			repo: repo,
+		}
 
 		fmt.Printf("   \033[36mdeploy\033[0m %s => %s\n", *sourceFilePath, *name)
 
-		err = deployer.CreateContract(*name, *sourceFilePath, []byte(*jsonParams), *force)
+		err = deployer.CreateContract(*name, *force)
 		if err != nil {
 			fmt.Println("\u2757\ufe0f \033[36mdeploy\033[0m", err)
 			return
 		}
 
-		repo := solar.ContractsRepository()
 		newContracts := repo.UnconfirmedContracts()
 
 		if *noconfirm == false && len(newContracts) != 0 {
@@ -52,81 +75,94 @@ func init() {
 }
 
 type Deployer struct {
+	Filename string
+	// JSON array of values to be used as constructor parameters
+	Params []byte
+
+	Contract *CompiledContract
+
 	rpc  *qtumRPC
 	repo *contractsRepository
 }
 
-func (d *Deployer) CreateContract(name, filepath string, jsonParams []byte, overwrite bool) (err error) {
-	// if !overwrite && d.repo.Exists(name) {
-	// 	return errors.Errorf("name already used: %s", name)
-	// }
+func (d *Deployer) inputData() (Bytes, error) {
+	jsonParams := d.Params
 
-	// gasLimit := 300000
+	calldata := d.Contract.Bin
 
-	// rpc := d.rpc
+	abi, err := d.Contract.encodingABI()
+	if err != nil {
+		return nil, errors.Wrap(err, "abi")
+	}
 
-	// contract, err := compileSource(filepath, CompilerOptions{})
-	// if err != nil {
-	// 	return errors.Wrap(err, "compile")
-	// }
+	constructor := abi.Constructor
 
-	// abi, err := contract.encodingABI()
-	// if err != nil {
-	// 	return errors.Wrap(err, "abi")
-	// }
+	if len(constructor.Inputs) == 0 && len(jsonParams) != 0 {
+		return nil, errors.New("does not expect constructor params")
+	}
 
-	// constructor := abi.Constructor
+	if len(constructor.Inputs) != 0 {
+		var params []interface{}
+		err = json.Unmarshal(jsonParams, &params)
+		if err != nil {
+			return nil, errors.Errorf("expected constructor params in JSON, got: %#v", string(jsonParams))
+		}
 
-	// if len(constructor.Inputs) == 0 && len(jsonParams) != 0 {
-	// 	return errors.New("does not expect constructor params")
-	// }
+		packedParams, err := abi.Constructor.Pack(params...)
+		if err != nil {
+			return nil, errors.Wrap(err, "constructor")
+		}
 
-	// bin := contract.Bin
-	// if len(constructor.Inputs) != 0 {
-	// 	var params []interface{}
-	// 	err = json.Unmarshal(jsonParams, &params)
-	// 	if err != nil {
-	// 		return errors.Errorf("expected constructor params in JSON, got: %#v", string(jsonParams))
-	// 	}
+		calldata = append(calldata, packedParams...)
+	}
 
-	// 	packedParams, err := abi.Constructor.Pack(params...)
-	// 	if err != nil {
-	// 		return errors.Wrap(err, "constructor")
-	// 	}
+	return calldata, nil
+}
 
-	// 	bin = append(bin, packedParams...)
-	// }
+func (d *Deployer) CreateContract(name string, overwrite bool) (err error) {
+	if !overwrite && d.repo.Exists(name) {
+		return errors.Errorf("name already used: %s", name)
+	}
 
-	// var tx TransactionReceipt
+	gasLimit := 300000
 
-	// err = rpc.Call(&tx, "createcontract", bin, gasLimit)
+	rpc := d.rpc
+	contract := d.Contract
 
-	// if err != nil {
-	// 	return errors.Wrap(err, "createcontract")
-	// }
+	bin, err := d.inputData()
+	if err != nil {
+		return
+	}
 
-	// // fmt.Println("tx", tx.Address)
-	// // fmt.Println("contract name", contract.Name)
+	var tx TransactionReceipt
 
-	// deployedContract := &DeployedContract{
-	// 	Name:             contract.Name,
-	// 	DeployName:       name,
-	// 	CompiledContract: *contract,
-	// 	TransactionID:    tx.TxID,
-	// 	Address:          tx.Address,
-	// 	CreatedAt:        time.Now(),
-	// }
+	err = rpc.Call(&tx, "createcontract", bin, gasLimit)
 
-	// err = d.repo.Set(name, deployedContract)
-	// if err != nil {
-	// 	return
-	// }
+	if err != nil {
+		return errors.Wrap(err, "createcontract")
+	}
 
-	// err = d.repo.Commit()
-	// if err != nil {
-	// 	return
-	// }
-	// pretty.Println("rpc err", string(res.RawError))
+	// fmt.Println("tx", tx.Address)
+	// fmt.Println("contract name", contract.Name)
+
+	deployedContract := &DeployedContract{
+		Name:             contract.Name,
+		DeployName:       name,
+		CompiledContract: *contract,
+		TransactionID:    tx.TxID,
+		Address:          tx.Address,
+		CreatedAt:        time.Now(),
+	}
+
+	err = d.repo.Set(name, deployedContract)
+	if err != nil {
+		return
+	}
+
+	err = d.repo.Commit()
+	if err != nil {
+		return
+	}
 
 	return nil
 }
