@@ -1,12 +1,8 @@
 package solar
 
 import (
-	"encoding/json"
 	"fmt"
 	"log"
-	"time"
-
-	"github.com/pkg/errors"
 )
 
 func init() {
@@ -61,75 +57,75 @@ type Deployer struct {
 }
 
 func (d *Deployer) CreateContract(name, filepath string, jsonParams []byte, overwrite bool) (err error) {
-	if !overwrite && d.repo.Exists(name) {
-		return errors.Errorf("name already used: %s", name)
-	}
+	// if !overwrite && d.repo.Exists(name) {
+	// 	return errors.Errorf("name already used: %s", name)
+	// }
 
-	gasLimit := 300000
+	// gasLimit := 300000
 
-	rpc := d.rpc
+	// rpc := d.rpc
 
-	contract, err := compileSource(filepath, CompilerOptions{})
-	if err != nil {
-		return errors.Wrap(err, "compile")
-	}
+	// contract, err := compileSource(filepath, CompilerOptions{})
+	// if err != nil {
+	// 	return errors.Wrap(err, "compile")
+	// }
 
-	abi, err := contract.encodingABI()
-	if err != nil {
-		return errors.Wrap(err, "abi")
-	}
+	// abi, err := contract.encodingABI()
+	// if err != nil {
+	// 	return errors.Wrap(err, "abi")
+	// }
 
-	constructor := abi.Constructor
+	// constructor := abi.Constructor
 
-	if len(constructor.Inputs) == 0 && len(jsonParams) != 0 {
-		return errors.New("does not expect constructor params")
-	}
+	// if len(constructor.Inputs) == 0 && len(jsonParams) != 0 {
+	// 	return errors.New("does not expect constructor params")
+	// }
 
-	bin := contract.Bin
-	if len(constructor.Inputs) != 0 {
-		var params []interface{}
-		err = json.Unmarshal(jsonParams, &params)
-		if err != nil {
-			return errors.Errorf("expected constructor params in JSON, got: %#v", string(jsonParams))
-		}
+	// bin := contract.Bin
+	// if len(constructor.Inputs) != 0 {
+	// 	var params []interface{}
+	// 	err = json.Unmarshal(jsonParams, &params)
+	// 	if err != nil {
+	// 		return errors.Errorf("expected constructor params in JSON, got: %#v", string(jsonParams))
+	// 	}
 
-		packedParams, err := abi.Constructor.Pack(params...)
-		if err != nil {
-			return errors.Wrap(err, "constructor")
-		}
+	// 	packedParams, err := abi.Constructor.Pack(params...)
+	// 	if err != nil {
+	// 		return errors.Wrap(err, "constructor")
+	// 	}
 
-		bin = append(bin, packedParams...)
-	}
+	// 	bin = append(bin, packedParams...)
+	// }
 
-	var tx TransactionReceipt
+	// var tx TransactionReceipt
 
-	err = rpc.Call(&tx, "createcontract", bin, gasLimit)
+	// err = rpc.Call(&tx, "createcontract", bin, gasLimit)
 
-	if err != nil {
-		return errors.Wrap(err, "createcontract")
-	}
+	// if err != nil {
+	// 	return errors.Wrap(err, "createcontract")
+	// }
 
-	// fmt.Println("tx", tx.Address)
-	// fmt.Println("contract name", contract.Name)
+	// // fmt.Println("tx", tx.Address)
+	// // fmt.Println("contract name", contract.Name)
 
-	deployedContract := &DeployedContract{
-		Name:             contract.Name,
-		DeployName:       name,
-		CompiledContract: *contract,
-		TransactionID:    tx.TxID,
-		Address:          tx.Address,
-		CreatedAt:        time.Now(),
-	}
+	// deployedContract := &DeployedContract{
+	// 	Name:             contract.Name,
+	// 	DeployName:       name,
+	// 	CompiledContract: *contract,
+	// 	TransactionID:    tx.TxID,
+	// 	Address:          tx.Address,
+	// 	CreatedAt:        time.Now(),
+	// }
 
-	err = d.repo.Set(name, deployedContract)
-	if err != nil {
-		return
-	}
+	// err = d.repo.Set(name, deployedContract)
+	// if err != nil {
+	// 	return
+	// }
 
-	err = d.repo.Commit()
-	if err != nil {
-		return
-	}
+	// err = d.repo.Commit()
+	// if err != nil {
+	// 	return
+	// }
 	// pretty.Println("rpc err", string(res.RawError))
 
 	return nil
