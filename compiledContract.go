@@ -17,11 +17,17 @@ type ABIDefinition struct {
 	Inputs   []ABIType `json:"inputs"`
 	Outputs  []ABIType `json:"outputs"`
 	Constant bool      `json:"constant"`
+
+	// Event
+	Anonymous bool `json:"anonymous"`
 }
 
 type ABIType struct {
 	Name string `json:"name"`
 	Type string `json:"type"`
+
+	// Event
+	Indexed bool `json:"indexed"`
 }
 
 type CompiledContract struct {
