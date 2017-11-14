@@ -1,3 +1,9 @@
+# Install
+
+```
+go get -u github.com/hayeah/solar/cli/solar
+```
+
 # Prototype for Smart Contract deployment tool
 
 Start qtumd in regtest mode:
