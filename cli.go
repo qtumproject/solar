@@ -5,8 +5,10 @@ import (
 	"log"
 	"net/url"
 	"os"
+	"strings"
 	"sync"
 
+	"github.com/pkg/errors"
 	kingpin "gopkg.in/alecthomas/kingpin.v2"
 )
 
@@ -16,6 +18,9 @@ var (
 	solarEnv  = app.Flag("env", "Environment name").Envar("SOLAR_ENV").Default("development").String()
 	solarRepo = app.Flag("repo", "Path of contracts repository").Envar("SOLAR_REPO").String()
 	appTasks  = map[string]func() error{}
+
+	solcOptimize   = app.Flag("optimize", "[solc] should Enable bytecode optimizer").Default("true").Bool()
+	solcAllowPaths = app.Flag("allow-paths", "[solc] Allow a given path for imports. A list of paths can be supplied by separating them with a comma.").Default("").String()
 )
 
 type solarCLI struct {
@@ -45,6 +50,25 @@ func (c *solarCLI) Reporter() *events {
 	})
 
 	return c.reporter
+}
+
+func (c *solarCLI) SolcOptions() (*CompilerOptions, error) {
+	allowPathsStr := *solcAllowPaths
+	if allowPathsStr == "" {
+		cwd, err := os.Getwd()
+		if err != nil {
+			return nil, errors.Wrap(err, "solc options")
+		}
+
+		allowPathsStr = cwd
+	}
+
+	allowPaths := strings.Split(allowPathsStr, ",")
+
+	return &CompilerOptions{
+		NoOptimize: !*solcOptimize,
+		AllowPaths: allowPaths,
+	}, nil
 }
 
 func (c *solarCLI) RPC() *qtumRPC {

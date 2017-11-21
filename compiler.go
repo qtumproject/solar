@@ -50,6 +50,7 @@ func (err *CompilerError) Error() string {
 
 type CompilerOptions struct {
 	NoOptimize bool
+	AllowPaths []string
 }
 
 type Compiler struct {
@@ -100,6 +101,10 @@ func (c *Compiler) execSolc() (*rawCompilerOutput, error) {
 
 	if !opts.NoOptimize {
 		args = append(args, "--optimize")
+	}
+
+	if len(opts.AllowPaths) > 0 {
+		args = append(args, "--allow-paths", strings.Join(opts.AllowPaths, ","))
 	}
 
 	var stderr bytes.Buffer

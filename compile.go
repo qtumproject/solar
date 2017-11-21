@@ -13,10 +13,13 @@ func init() {
 	file := cmd.Arg("file", "Solidity contract source file (.sol)").Required().String()
 
 	appTasks["compile"] = func() (err error) {
-		var opts CompilerOptions
+		opts, err := solar.SolcOptions()
+		if err != nil {
+			return
+		}
 
 		c := Compiler{
-			Opts:     opts,
+			Opts:     *opts,
 			Filename: *file,
 		}
 

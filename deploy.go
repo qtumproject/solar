@@ -21,9 +21,15 @@ func init() {
 	jsonParams := cmd.Arg("jsonParams", "Constructor params as a json array").Default("").String()
 
 	appTasks["deploy"] = func() (err error) {
+		opts, err := solar.SolcOptions()
+		if err != nil {
+			return
+		}
+
 		filename := *sourceFilePath
 
 		compiler := Compiler{
+			Opts:     *opts,
 			Filename: filename,
 		}
 
