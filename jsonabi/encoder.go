@@ -72,10 +72,6 @@ func massageJSONValuesToABIValues(args abi.Arguments, vals []interface{}) ([]int
 		val := vals[i]
 		t := arg.Type
 
-		if t.IsSlice {
-			t.Elem
-		}
-
 		switch t.T {
 
 		case abi.IntTy:

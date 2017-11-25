@@ -3,6 +3,7 @@ package solar
 import (
 	"fmt"
 	"os"
+	"github.com/hayeah/solar/contract"
 )
 
 func init() {
@@ -13,38 +14,38 @@ func init() {
 		names := *contractNames
 		repo := solar.ContractsRepository()
 
-		if len(repo.Contracts) == 0 {
+		if repo.Len() == 0 {
 			fmt.Println("No deployed contract yet")
 			os.Exit(0)
 		}
 
-		var contracts []*DeployedContract
+		var contracts []*contract.DeployedContract
 		if len(names) != 0 {
 			for _, name := range names {
-				contract, found := repo.Contracts[name]
+				c, found := repo.Get(name)
 				if !found {
 					fmt.Printf("\u2757\ufe0f %s: not found\n", name)
 					continue
 				}
-				contracts = append(contracts, contract)
+				contracts = append(contracts, c)
 			}
 			// contracts =
 		} else {
 			contracts = repo.SortedContracts()
 		}
 
-		for _, contract := range contracts {
+		for _, c := range contracts {
 			// FIXME: store deploy name in contract
-			name := contract.DeployName
-			if contract.Confirmed {
+			name := c.DeployName
+			if c.Confirmed {
 				fmt.Printf("\u2705  %s\n", name)
 			} else {
 				fmt.Printf("   %s\n", name)
 			}
 
-			fmt.Printf("        txid: %s\n", contract.TransactionID)
-			fmt.Printf("     address: %s\n", contract.Address)
-			fmt.Printf("   confirmed: %v\n", contract.Confirmed)
+			fmt.Printf("        txid: %s\n", c.TransactionID)
+			fmt.Printf("     address: %s\n", c.Address)
+			fmt.Printf("   confirmed: %v\n", c.Confirmed)
 
 			fmt.Println("")
 

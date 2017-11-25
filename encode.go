@@ -18,12 +18,12 @@ func init() {
 	appTasks["encode"] = func() (err error) {
 		repo := solar.ContractsRepository()
 
-		c, ok := repo.Contracts[*contractName]
+		c, ok := repo.Get(*contractName)
 		if !ok {
 			return errors.Errorf("Cannot find contract: %s", *contractName)
 		}
 
-		abi, err := c.encodingABI()
+		abi, err := c.EncodingABI()
 		if err != nil {
 			return
 		}

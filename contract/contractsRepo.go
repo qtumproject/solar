@@ -1,10 +1,8 @@
-package solar
+package contract
 
 import (
 	"encoding/json"
-	"fmt"
 	"log"
-	"math/rand"
 	"os"
 	"sort"
 	"time"
@@ -15,25 +13,25 @@ import (
 type DeployedContracts map[string]*DeployedContract
 
 type DeployedContract struct {
-	Name          string `json:"name"`
-	DeployName    string `json:"deployName"`
-	Address       Bytes  `json:"address"`
-	TransactionID Bytes  `json:"txid"`
 	CompiledContract
-	CreatedAt time.Time `json:"createdAt"`
-	Confirmed bool      `json:"confirmed"`
+	Name          string    `json:"name"`
+	DeployName    string    `json:"deployName"`
+	Address       Bytes     `json:"address"`
+	TransactionID Bytes     `json:"txid"`
+	CreatedAt     time.Time `json:"createdAt"`
+	Confirmed     bool      `json:"confirmed"`
 }
 
-type contractsRepository struct {
+type ContractsRepository struct {
 	filepath  string
 	Contracts DeployedContracts `json:"contracts"`
 	Libraries DeployedContracts `json:"libraries"`
 }
 
-func openContractsRepository(filepath string) (repo *contractsRepository, err error) {
+func OpenContractsRepository(filepath string) (repo *ContractsRepository, err error) {
 	f, err := os.Open(filepath)
 	if os.IsNotExist(err) {
-		return &contractsRepository{
+		return &ContractsRepository{
 			filepath:  filepath,
 			Contracts: make(DeployedContracts),
 			Libraries: make(DeployedContracts),
@@ -46,7 +44,7 @@ func openContractsRepository(filepath string) (repo *contractsRepository, err er
 	defer f.Close()
 
 	dec := json.NewDecoder(f)
-	repo = &contractsRepository{
+	repo = &ContractsRepository{
 		filepath: filepath,
 	}
 
@@ -66,7 +64,20 @@ func openContractsRepository(filepath string) (repo *contractsRepository, err er
 	return
 }
 
-func (r *contractsRepository) UnconfirmedContracts() []*DeployedContract {
+func (r *ContractsRepository) Get(name string) (*DeployedContract, bool) {
+	contract, ok := r.Contracts[name]
+	return contract, ok
+}
+
+func (r *ContractsRepository) Len() int {
+	return len(r.Contracts)
+}
+
+func (r *ContractsRepository) ConfirmContract(contract *DeployedContract) {
+
+}
+
+func (r *ContractsRepository) UnconfirmedContracts() []*DeployedContract {
 	var contracts []*DeployedContract
 
 	for _, contract := range r.Contracts {
@@ -78,7 +89,7 @@ func (r *contractsRepository) UnconfirmedContracts() []*DeployedContract {
 	return contracts
 }
 
-func (r *contractsRepository) SortedContracts() []*DeployedContract {
+func (r *ContractsRepository) SortedContracts() []*DeployedContract {
 	var contracts []*DeployedContract
 
 	for _, contract := range r.Contracts {
@@ -95,17 +106,17 @@ func (r *contractsRepository) SortedContracts() []*DeployedContract {
 	return contracts
 }
 
-func (r *contractsRepository) Exists(name string) bool {
+func (r *ContractsRepository) Exists(name string) bool {
 	_, found := r.Contracts[name]
 	return found
 }
 
-func (r *contractsRepository) LibExists(name string) bool {
+func (r *ContractsRepository) LibExists(name string) bool {
 	_, found := r.Libraries[name]
 	return found
 }
 
-func (r *contractsRepository) Confirm(name string) (err error) {
+func (r *ContractsRepository) Confirm(name string) (err error) {
 	c, found := r.Contracts[name]
 	if !found {
 		return errors.Errorf("Cannot unconfirm unknown contract %s", name)
@@ -116,15 +127,15 @@ func (r *contractsRepository) Confirm(name string) (err error) {
 	return nil
 }
 
-func (r *contractsRepository) Set(name string, c *DeployedContract) {
+func (r *ContractsRepository) Set(name string, c *DeployedContract) {
 	r.Contracts[name] = c
 }
 
-func (r *contractsRepository) SetLib(name string, c *DeployedContract) {
+func (r *ContractsRepository) SetLib(name string, c *DeployedContract) {
 	r.Libraries[name] = c
 }
 
-func (r *contractsRepository) Commit() (err error) {
+func (r *ContractsRepository) Commit() (err error) {
 	// TODO. do write & swap instead of truncat?
 	f, err := os.Create(r.filepath)
 	if err != nil {
@@ -140,37 +151,26 @@ func (r *contractsRepository) Commit() (err error) {
 
 // Confirm checks the RPC server to see if all the contracts
 // are confirmed by the blockchain.
-func (r *contractsRepository) ConfirmAll() (err error) {
+func (r *ContractsRepository) ConfirmAll(updateProgress func(i, total int), confirmer func(c *DeployedContract) error) (err error) {
 	contracts := r.UnconfirmedContracts()
 
 	total := len(contracts)
 
-	reporter := solar.Reporter()
-
-	updateProgress := func(i int) {
-		reporter.Submit(eventProgress{
-			info: fmt.Sprintf("(%d/%d) Confirming contracts", i, total),
-		})
-
-		if i == total {
-			reporter.Submit(eventProgressEnd{
-				info: fmt.Sprintf("\U0001f680  All contracts confirmed"),
-			})
-		}
-
+	if updateProgress != nil {
+		updateProgress(0, total)
 	}
-
-	updateProgress(0)
 
 	for i, contract := range contracts {
 		contract := contract
 
-		err := r.confirmContract(contract)
+		err := confirmer(contract)
 		if err != nil {
 			log.Println("err", err)
 		}
 
-		updateProgress(i + 1)
+		if updateProgress != nil {
+			updateProgress(i+1, total)
+		}
 	}
 
 	err = r.Commit()
@@ -179,27 +179,4 @@ func (r *contractsRepository) ConfirmAll() (err error) {
 	}
 
 	return
-}
-
-func (r *contractsRepository) confirmContract(c *DeployedContract) (err error) {
-	rpc := solar.RPC()
-
-	// name := c.Name
-	for {
-		// fmt.Printf("Checking %s\n", name)
-		result := make(map[string]interface{})
-		err := rpc.Call(&result, "getaccountinfo", c.Address)
-		if err, ok := err.(*jsonRPCError); ok {
-			// fmt.Printf("%s\t%s\n", name, err)
-			nudge := rand.Intn(500)
-			time.Sleep(1*time.Second + time.Duration(nudge)*time.Millisecond)
-			continue
-		} else if err != nil {
-			return err
-		}
-
-		// fmt.Printf("confirmed\t%s\t%s\n", name, c.Address)
-		c.Confirmed = true
-		return nil
-	}
 }

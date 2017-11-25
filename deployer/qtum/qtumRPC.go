@@ -1,4 +1,4 @@
-package solar
+package qtum
 
 import (
 	"bytes"
@@ -7,6 +7,8 @@ import (
 	"fmt"
 	"net/http"
 	"net/url"
+
+	"github.com/hayeah/solar/contract"
 )
 
 type jsonRPCRequest struct {
@@ -32,17 +34,17 @@ func (err *jsonRPCError) Error() string {
 }
 
 type TransactionReceipt struct {
-	TxID    Bytes  `json:"txid"`
-	Sender  string `json:"sender"`
-	Hash160 Bytes  `json:"hash160"`
-	Address Bytes  `json:"address"`
+	TxID    contract.Bytes `json:"txid"`
+	Sender  string         `json:"sender"`
+	Hash160 contract.Bytes `json:"hash160"`
+	Address contract.Bytes `json:"address"`
 }
 
-type qtumRPC struct {
+type rpc struct {
 	BaseURL *url.URL
 }
 
-func (rpc *qtumRPC) Call(result interface{}, method string, params ...interface{}) (err error) {
+func (rpc *rpc) Call(result interface{}, method string, params ...interface{}) (err error) {
 	url := rpc.BaseURL
 
 	jsonReq := jsonRPCRequest{
