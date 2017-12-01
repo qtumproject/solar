@@ -67,13 +67,13 @@ func (d *Deployer) CreateContract(c *contract.CompiledContract, jsonParams []byt
 		Gas:  4700000,
 	}
 
-	fmt.Printf("T: %#v\n", t)
+	//fmt.Printf("T: %#v\n", t)
 	var txHash string
 	err = d.client.Call(&txHash, "eth_sendTransaction", t)
 	if err != nil {
 		fmt.Println("sendtransaction error", err)
 	}
-	fmt.Println("txHash:", txHash)
+	fmt.Printf("txHash: %s\n", txHash)
 
 	deployedContract := &contract.DeployedContract{
 		CompiledContract: *c,
@@ -116,7 +116,7 @@ func (d *Deployer) ConfirmContract(c *contract.DeployedContract) (err error) {
 		if len(result.ContractAddress) != 0 {
 			c.Address = contract.Bytes(result.ContractAddress)
 			c.Confirmed = true
-			fmt.Printf("confirmed result: %#v\n", result)
+			fmt.Printf("\rcontractAddress: %s\n", result.ContractAddress)
 			break
 		}
 
@@ -130,7 +130,7 @@ func (d *Deployer) ConfirmContract(c *contract.DeployedContract) (err error) {
 func (d *Deployer) Mine() (err error) {
 	var result interface{}
 	err = d.client.Call(&result, "miner_start", 1)
-	fmt.Printf("miner_start %#v\n", result)
+	//fmt.Printf("miner_start %#v\n", result)
 	return
 }
 

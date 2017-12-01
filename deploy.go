@@ -79,7 +79,7 @@ func init() {
 			// Force local chain to generate a block immediately.
 			allowFastConfirm := *solarEnv == "development" || *solarEnv == "test"
 			if *noFastConfirm == false && allowFastConfirm {
-				fmt.Println("call deployer.Mine")
+				//fmt.Println("call deployer.Mine")
 				err = deployer.Mine()
 				if err != nil {
 					log.Println(err)
