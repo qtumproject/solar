@@ -31,14 +31,7 @@ geth --rpc --rpcapi "eth,miner,personal" --datadir "./" --nodiscover console
 then open a new tab
 
 ```
-export ETH_RPC=http://localhost:8545
-```
-
-set deployment account from `personal.listAccounts`
-
-```
-export ETH_ACCOUNT=               (optional)
-export ETH_PASSWORD=              (optional)
+export ETH_RPC=http://accountAddress:accountPassword@localhost:8545
 ```
 
 `solar` will let you enter the account and password, if you does not set them

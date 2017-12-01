@@ -22,8 +22,6 @@ var (
 
 	// geth --rpc --rpcapi="eth,personal,miner"
 	ethRPC      = app.Flag("eth_rpc", "RPC provider url").Envar("ETH_RPC").String()
-	ethAccount  = app.Flag("eth_account", "eth account address").Envar("ETH_ACCOUNT").String()
-	ethPassword = app.Flag("eth_password", "eth account password").Envar("ETH_PASSWORD").String()
 	solarEnv    = app.Flag("env", "Environment name").Envar("SOLAR_ENV").Default("development").String()
 	solarRepo   = app.Flag("repo", "Path of contracts repository").Envar("SOLAR_REPO").String()
 	appTasks    = map[string]func() error{}
@@ -115,8 +113,7 @@ func (c *solarCLI) Deployer() (deployer deployer.Deployer) {
 		if err != nil {
 			log.Fatalf("Invalid RPC url: %#v", rawurl)
 		}
-		acc := eth.NewAccount(*ethAccount,  *ethPassword)
-		deployer, err = eth.NewDeployer(rpcURL, c.ContractsRepository(), acc)
+		deployer, err = eth.NewDeployer(rpcURL, c.ContractsRepository())
 	}
 
 	if err != nil {

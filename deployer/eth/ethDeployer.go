@@ -19,7 +19,15 @@ type Deployer struct {
 	client *rpc.Client
 }
 
-func NewDeployer(rpcURL *url.URL, repo *contract.ContractsRepository, acc Account) (*Deployer, error) {
+func NewDeployer(rpcURL *url.URL, repo *contract.ContractsRepository) (*Deployer, error) {
+	address, password := "", ""
+	if auth := rpcURL.User; auth != nil {
+		address = auth.Username()
+		password, _ = auth.Password()
+		rpcURL.User = nil
+	}
+	acc := NewAccount(address, password)
+
 	client, err := rpc.Dial(rpcURL.String())
 	if err != nil {
 		return nil, errors.Wrap(err, "rpc.Dial")

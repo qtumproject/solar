@@ -17,14 +17,13 @@ type Account struct {
 
 func (acc Account) Unlock(client *rpc.Client) (err error) {
 	var result bool
-	err = client.Call(&result, "personal_unlockAccount")
 
 	err = client.Call(&result, "personal_unlockAccount", acc.Addr, acc.Password)
 	if err != nil {
 		return errors.Wrap(err, "personal_unlockAccount")
 	}
 
-	fmt.Println("unlock account result:", result)
+	//fmt.Println("unlock account result:", result)
 	if result != true {
 		return errors.New("unlock account error")
 	}
