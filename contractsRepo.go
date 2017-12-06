@@ -26,7 +26,7 @@ type DeployedContract struct {
 
 type contractsRepository struct {
 	filepath  string
-	contracts DeployedContracts
+	Contracts DeployedContracts `json:"contracts"`
 }
 
 func openContractsRepository(filepath string) (repo *contractsRepository, err error) {
@@ -34,7 +34,7 @@ func openContractsRepository(filepath string) (repo *contractsRepository, err er
 	if os.IsNotExist(err) {
 		return &contractsRepository{
 			filepath:  filepath,
-			contracts: make(DeployedContracts),
+			Contracts: make(DeployedContracts),
 		}, nil
 	}
 
@@ -44,22 +44,19 @@ func openContractsRepository(filepath string) (repo *contractsRepository, err er
 	defer f.Close()
 
 	dec := json.NewDecoder(f)
-	contracts := make(DeployedContracts)
-	err = dec.Decode(&contracts)
-	if err != nil {
-		return
+	repo = &contractsRepository{
+		filepath: filepath,
 	}
 
-	return &contractsRepository{
-		filepath:  filepath,
-		contracts: contracts,
-	}, nil
+	err = dec.Decode(&repo)
+
+	return
 }
 
 func (r *contractsRepository) UnconfirmedContracts() []*DeployedContract {
 	var contracts []*DeployedContract
 
-	for _, contract := range r.contracts {
+	for _, contract := range r.Contracts {
 		if !contract.Confirmed {
 			contracts = append(contracts, contract)
 		}
@@ -71,7 +68,7 @@ func (r *contractsRepository) UnconfirmedContracts() []*DeployedContract {
 func (r *contractsRepository) SortedContracts() []*DeployedContract {
 	var contracts []*DeployedContract
 
-	for _, contract := range r.contracts {
+	for _, contract := range r.Contracts {
 		contracts = append(contracts, contract)
 	}
 
@@ -86,12 +83,12 @@ func (r *contractsRepository) SortedContracts() []*DeployedContract {
 }
 
 func (r *contractsRepository) Exists(name string) bool {
-	_, found := r.contracts[name]
+	_, found := r.Contracts[name]
 	return found
 }
 
 func (r *contractsRepository) Confirm(name string) (err error) {
-	c, found := r.contracts[name]
+	c, found := r.Contracts[name]
 	if !found {
 		return errors.Errorf("Cannot unconfirm unknown contract %s", name)
 	}
@@ -102,7 +99,7 @@ func (r *contractsRepository) Confirm(name string) (err error) {
 }
 
 func (r *contractsRepository) Set(name string, c *DeployedContract) (err error) {
-	r.contracts[name] = c
+	r.Contracts[name] = c
 	return nil
 }
 
@@ -117,7 +114,7 @@ func (r *contractsRepository) Commit() (err error) {
 	enc := json.NewEncoder(f)
 	enc.SetIndent("", "  ")
 
-	return enc.Encode(r.contracts)
+	return enc.Encode(r)
 }
 
 // Confirm checks the RPC server to see if all the contracts

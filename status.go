@@ -13,7 +13,7 @@ func init() {
 		names := *contractNames
 		repo := solar.ContractsRepository()
 
-		if len(repo.contracts) == 0 {
+		if len(repo.Contracts) == 0 {
 			fmt.Println("No deployed contract yet")
 			os.Exit(0)
 		}
@@ -21,7 +21,7 @@ func init() {
 		var contracts []*DeployedContract
 		if len(names) != 0 {
 			for _, name := range names {
-				contract, found := repo.contracts[name]
+				contract, found := repo.Contracts[name]
 				if !found {
 					fmt.Printf("\u2757\ufe0f %s: not found\n", name)
 					continue

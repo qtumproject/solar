@@ -18,7 +18,7 @@ func init() {
 	appTasks["encode"] = func() (err error) {
 		repo := solar.ContractsRepository()
 
-		c, ok := repo.contracts[*contractName]
+		c, ok := repo.Contracts[*contractName]
 		if !ok {
 			return errors.Errorf("Cannot find contract: %s", *contractName)
 		}

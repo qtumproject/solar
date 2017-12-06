@@ -121,6 +121,7 @@ func (c *Compiler) execSolc() (*rawCompilerOutput, error) {
 	}
 
 	output := &rawCompilerOutput{}
+	// fmt.Println("solc output", string(stdout))
 	err = json.Unmarshal(stdout, output)
 	if err != nil {
 		return nil, errors.Wrap(err, "parse solc output")
