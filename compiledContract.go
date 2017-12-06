@@ -6,6 +6,7 @@ import (
 
 	"github.com/ethereum/go-ethereum/crypto/sha3"
 	"github.com/hayeah/solar/abi"
+	"github.com/pkg/errors"
 
 	"encoding/hex"
 )
@@ -92,18 +93,23 @@ func (c *rawCompiledContract) UnmarshalJSON(data []byte) error {
 
 	err := json.Unmarshal(data, &dest)
 	if err != nil {
-		return err
+		return errors.Wrap(err, "parse contract raw metadata")
+	}
+
+	if dest.RawMetadata == "" && dest.BinStr == "" {
+		// this contract is interface only
+		return nil
 	}
 
 	// Recursively parse Metadata, which is a json string.
 	err = json.Unmarshal([]byte(dest.RawMetadata), &c.Metadata)
 	if err != nil {
-		return err
+		return errors.Wrap(err, "parse contract metadata")
 	}
 
 	bin, err := hex.DecodeString(dest.BinStr)
 	if err != nil {
-		return err
+		return errors.Wrap(err, "decode byte string")
 	}
 
 	c.RawMetadata = dest.RawMetadata
