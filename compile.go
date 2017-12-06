@@ -18,9 +18,12 @@ func init() {
 			return
 		}
 
+		repo := solar.ContractsRepository()
+
 		c := Compiler{
 			Opts:     *opts,
 			Filename: *file,
+			Repo:     repo,
 		}
 
 		contract, err := c.Compile()

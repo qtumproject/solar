@@ -3,6 +3,7 @@ package solar
 import (
 	"bytes"
 	"encoding/json"
+	"fmt"
 	"os"
 	"os/exec"
 	"strings"
@@ -57,6 +58,7 @@ type Compiler struct {
 	// only used for error reporting
 	Filename string
 	Opts     CompilerOptions
+	Repo     *contractsRepository
 }
 
 // Compile returns only the contract that has the same name as the source file
@@ -105,6 +107,16 @@ func (c *Compiler) execSolc() (*rawCompilerOutput, error) {
 
 	if len(opts.AllowPaths) > 0 {
 		args = append(args, "--allow-paths", strings.Join(opts.AllowPaths, ","))
+	}
+
+	// libraries linkage support
+	if c.Repo != nil && len(c.Repo.Libraries) > 0 {
+		var linkages []string
+		for _, lib := range c.Repo.Libraries {
+			linkages = append(linkages, fmt.Sprintf("%s:%s:%s", lib.DeployName, lib.Name, lib.Address))
+		}
+
+		args = append(args, "--libraries", strings.Join(linkages, ","))
 	}
 
 	var stderr bytes.Buffer

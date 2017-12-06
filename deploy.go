@@ -53,17 +53,18 @@ func init() {
 
 		filename := target.file
 
+		repo := solar.ContractsRepository()
+
 		compiler := Compiler{
 			Opts:     *opts,
 			Filename: filename,
+			Repo:     repo,
 		}
 
 		contract, err := compiler.Compile()
 		if err != nil {
 			return errors.Wrap(err, "compile")
 		}
-
-		repo := solar.ContractsRepository()
 
 		deployer := &Deployer{
 			Contract: contract,
