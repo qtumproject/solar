@@ -27,6 +27,7 @@ type DeployedContract struct {
 type contractsRepository struct {
 	filepath  string
 	Contracts DeployedContracts `json:"contracts"`
+	Libraries DeployedContracts `json:"libraries"`
 }
 
 func openContractsRepository(filepath string) (repo *contractsRepository, err error) {
@@ -35,6 +36,7 @@ func openContractsRepository(filepath string) (repo *contractsRepository, err er
 		return &contractsRepository{
 			filepath:  filepath,
 			Contracts: make(DeployedContracts),
+			Libraries: make(DeployedContracts),
 		}, nil
 	}
 
@@ -49,6 +51,17 @@ func openContractsRepository(filepath string) (repo *contractsRepository, err er
 	}
 
 	err = dec.Decode(&repo)
+	if err != nil {
+		return
+	}
+
+	if repo.Libraries == nil {
+		repo.Libraries = make(DeployedContracts)
+	}
+
+	if repo.Contracts == nil {
+		repo.Contracts = make(DeployedContracts)
+	}
 
 	return
 }
@@ -87,6 +100,11 @@ func (r *contractsRepository) Exists(name string) bool {
 	return found
 }
 
+func (r *contractsRepository) LibExists(name string) bool {
+	_, found := r.Libraries[name]
+	return found
+}
+
 func (r *contractsRepository) Confirm(name string) (err error) {
 	c, found := r.Contracts[name]
 	if !found {
@@ -98,9 +116,12 @@ func (r *contractsRepository) Confirm(name string) (err error) {
 	return nil
 }
 
-func (r *contractsRepository) Set(name string, c *DeployedContract) (err error) {
+func (r *contractsRepository) Set(name string, c *DeployedContract) {
 	r.Contracts[name] = c
-	return nil
+}
+
+func (r *contractsRepository) SetLib(name string, c *DeployedContract) {
+	r.Libraries[name] = c
 }
 
 func (r *contractsRepository) Commit() (err error) {

@@ -35,12 +35,12 @@ func parseDeployTarget(target string) deployTarget {
 func init() {
 	cmd := app.Command("deploy", "Compile Solidity contracts.")
 
-	force := cmd.Flag("force", "Overwrite previously deployed contract with the same name").Bool()
+	force := cmd.Flag("force", "Overwrite previously deployed contract with the same deploy name").Bool()
+	aslib := cmd.Flag("lib", "Deploy the contract as a library").Bool()
 	noconfirm := cmd.Flag("no-confirm", "Don't wait for network to confirm deploy").Bool()
 	noFastConfirm := cmd.Flag("no-fast-confirm", "(dev) Don't generate block to confirm deploy immediately").Bool()
 
 	target := cmd.Arg("target", "Solidity contracts to deploy.").Required().String()
-	// name := cmd.Arg("name", "Name of contract").Required().String()
 	jsonParams := cmd.Arg("jsonParams", "Constructor params as a json array").Default("").String()
 
 	appTasks["deploy"] = func() (err error) {
@@ -76,7 +76,7 @@ func init() {
 
 		fmt.Printf("   \033[36mdeploy\033[0m %s => %s\n", target.file, target.name)
 
-		err = deployer.CreateContract(target.name, *force)
+		err = deployer.CreateContract(target.name, *force, *aslib)
 		if err != nil {
 			fmt.Println("\u2757\ufe0f \033[36mdeploy\033[0m", err)
 			return
@@ -150,9 +150,13 @@ func (d *Deployer) inputData() (Bytes, error) {
 	return calldata, nil
 }
 
-func (d *Deployer) CreateContract(name string, overwrite bool) (err error) {
-	if !overwrite && d.repo.Exists(name) {
-		return errors.Errorf("name already used: %s", name)
+func (d *Deployer) CreateContract(name string, overwrite bool, aslib bool) (err error) {
+	if !overwrite {
+		if aslib && d.repo.LibExists(name) {
+			return errors.Errorf("library name already used: %s", name)
+		} else if !aslib && d.repo.Exists(name) {
+			return errors.Errorf("contract name already used: %s", name)
+		}
 	}
 
 	gasLimit := 300000
@@ -185,9 +189,10 @@ func (d *Deployer) CreateContract(name string, overwrite bool) (err error) {
 		CreatedAt:        time.Now(),
 	}
 
-	err = d.repo.Set(name, deployedContract)
-	if err != nil {
-		return
+	if aslib {
+		d.repo.SetLib(name, deployedContract)
+	} else {
+		d.repo.Set(name, deployedContract)
 	}
 
 	err = d.repo.Commit()
