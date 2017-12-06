@@ -112,6 +112,8 @@ func (c *Compiler) execSolc() (*rawCompilerOutput, error) {
 	// libraries linkage support
 	if c.Repo != nil && len(c.Repo.Libraries) > 0 {
 		var linkages []string
+		// A linkable library is specified with a string that looks like:
+		//    contracts/SafeMathLib.sol:SafeMathLib:4242424242424242424242424242424242424242
 		for _, lib := range c.Repo.Libraries {
 			linkages = append(linkages, fmt.Sprintf("%s:%s:%s", lib.DeployName, lib.Name, lib.Address))
 		}
