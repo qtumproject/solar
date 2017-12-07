@@ -1,7 +1,7 @@
 # Install
 
 ```
-go get -u github.com/qtumproject/solar/cli/solar
+go install -u github.com/qtumproject/solar/cli/solar
 ```
 
 # Prototype for Smart Contract deployment tool
