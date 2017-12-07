@@ -21,6 +21,10 @@ func (o *rawCompilerOutput) CompiledContracts() map[string]contract.CompiledCont
 	contracts := make(map[string]contract.CompiledContract)
 
 	for name, rawContract := range o.Contracts {
+		if len(rawContract.Bin) == 0 {
+			continue
+		}
+
 		// name: filepath:ContractName
 		contractName := name
 		parts := strings.Split(name, ":")
