@@ -1,2 +1,4 @@
 /solar.*.json
 /solar
+/.vscode
+/cli/solar/debug
