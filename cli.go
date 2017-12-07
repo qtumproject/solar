@@ -8,11 +8,11 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/hayeah/solar/contract"
-	"github.com/hayeah/solar/deployer"
-	"github.com/hayeah/solar/deployer/eth"
-	"github.com/hayeah/solar/deployer/qtum"
 	"github.com/pkg/errors"
+	"github.com/qtumproject/solar/contract"
+	"github.com/qtumproject/solar/deployer"
+	"github.com/qtumproject/solar/deployer/eth"
+	"github.com/qtumproject/solar/deployer/qtum"
 	kingpin "gopkg.in/alecthomas/kingpin.v2"
 )
 
@@ -21,10 +21,10 @@ var (
 	qtumRPC = app.Flag("qtum_rpc", "RPC provider url").Envar("QTUM_RPC").String()
 
 	// geth --rpc --rpcapi="eth,personal,miner"
-	ethRPC      = app.Flag("eth_rpc", "RPC provider url").Envar("ETH_RPC").String()
-	solarEnv    = app.Flag("env", "Environment name").Envar("SOLAR_ENV").Default("development").String()
-	solarRepo   = app.Flag("repo", "Path of contracts repository").Envar("SOLAR_REPO").String()
-	appTasks    = map[string]func() error{}
+	ethRPC    = app.Flag("eth_rpc", "RPC provider url").Envar("ETH_RPC").String()
+	solarEnv  = app.Flag("env", "Environment name").Envar("SOLAR_ENV").Default("development").String()
+	solarRepo = app.Flag("repo", "Path of contracts repository").Envar("SOLAR_REPO").String()
+	appTasks  = map[string]func() error{}
 
 	solcOptimize   = app.Flag("optimize", "[solc] should Enable bytecode optimizer").Default("true").Bool()
 	solcAllowPaths = app.Flag("allow-paths", "[solc] Allow a given path for imports. A list of paths can be supplied by separating them with a comma.").Default("").String()

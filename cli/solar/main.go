@@ -1,7 +1,7 @@
 package main
 
 import (
-	"github.com/hayeah/solar"
+	"github.com/qtumproject/solar"
 )
 
 func main() {

@@ -6,8 +6,8 @@ import (
 	"fmt"
 
 	"github.com/ethereum/go-ethereum/crypto/sha3"
-	"github.com/hayeah/solar/abi"
 	"github.com/pkg/errors"
+	"github.com/qtumproject/solar/abi"
 )
 
 type ABIDefinition struct {

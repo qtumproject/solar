@@ -6,8 +6,8 @@ import (
 
 	"math/rand"
 
-	"github.com/hayeah/solar/contract"
 	"github.com/pkg/errors"
+	"github.com/qtumproject/solar/contract"
 )
 
 type Deployer struct {

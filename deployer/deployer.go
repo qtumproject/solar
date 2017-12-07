@@ -1,7 +1,7 @@
 package deployer
 
 import (
-	"github.com/hayeah/solar/contract"
+	"github.com/qtumproject/solar/contract"
 )
 
 type Deployer interface {

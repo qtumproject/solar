@@ -3,7 +3,8 @@ package solar
 import (
 	"fmt"
 	"os"
-	"github.com/hayeah/solar/contract"
+
+	"github.com/qtumproject/solar/contract"
 )
 
 func init() {

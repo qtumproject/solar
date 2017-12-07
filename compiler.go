@@ -8,8 +8,8 @@ import (
 	"os/exec"
 	"strings"
 
-	"github.com/hayeah/solar/contract"
 	"github.com/pkg/errors"
+	"github.com/qtumproject/solar/contract"
 )
 
 type rawCompilerOutput struct {

@@ -9,9 +9,8 @@ import (
 	"testing"
 	"text/template"
 
+	"github.com/qtumproject/solar/abi"
 	"github.com/stretchr/testify/assert"
-
-	"github.com/hayeah/solar/abi"
 )
 
 func testMethodABI(typeName string) abi.Arguments {
