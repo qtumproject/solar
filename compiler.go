@@ -128,7 +128,7 @@ func (c *Compiler) execSolc() (*rawCompilerOutput, error) {
 	cmd := exec.Command("solc", args...)
 	cmd.Stderr = &stderr
 	stdout, err := cmd.Output()
-	if _, ok := err.(*exec.ExitError); ok {
+	if _, hasExitErr := err.(*exec.ExitError); hasExitErr {
 		return nil, &CompilerError{
 			SourceFile:  filename,
 			ErrorOutput: stderr.String(),

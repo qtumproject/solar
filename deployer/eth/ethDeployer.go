@@ -1,6 +1,7 @@
 package eth
 
 import (
+	"encoding/hex"
 	"encoding/json"
 	"fmt"
 	"math/big"
@@ -72,21 +73,23 @@ func (d *Deployer) CreateContract(c *contract.CompiledContract, jsonParams []byt
 	err = d.client.Call(&txHash, "eth_sendTransaction", t)
 	if err != nil {
 		fmt.Println("sendtransaction error", err)
+		return errors.Wrap(err, "sendtransaction")
 	}
 	fmt.Printf("txHash: %s\n", txHash)
 
+	hexBytes, _ := hex.DecodeString(txHash[2:])
 	deployedContract := &contract.DeployedContract{
 		CompiledContract: *c,
 		Name:             c.Name,
 		DeployName:       name,
-		TransactionID:    contract.Bytes(txHash),
+		TransactionID:    contract.Bytes(hexBytes),
 		CreatedAt:        time.Now(),
 	}
 
 	if aslib {
-		d.SetLib(name, deployedContract)
+		d.ContractsRepository.SetLib(name, deployedContract)
 	} else {
-		d.Set(name, deployedContract)
+		d.ContractsRepository.Set(name, deployedContract)
 	}
 
 	err = d.ContractsRepository.Commit()
@@ -105,7 +108,7 @@ func (d *Deployer) ConfirmContract(c *contract.DeployedContract) (err error) {
 
 	result := txReceipt{}
 	for {
-		err = d.client.Call(&result, "eth_getTransactionReceipt", string(c.TransactionID))
+		err = d.client.Call(&result, "eth_getTransactionReceipt", "0x"+hex.EncodeToString(c.TransactionID))
 		if err != nil {
 			fmt.Println("sendtransaction error", err)
 		}
@@ -114,7 +117,8 @@ func (d *Deployer) ConfirmContract(c *contract.DeployedContract) (err error) {
 		}
 
 		if len(result.ContractAddress) != 0 {
-			c.Address = contract.Bytes(result.ContractAddress)
+			addressBytes, _ := hex.DecodeString(result.ContractAddress[2:])
+			c.Address = contract.Bytes(addressBytes)
 			c.Confirmed = true
 			fmt.Printf("\rcontractAddress: %s\n", result.ContractAddress)
 			break

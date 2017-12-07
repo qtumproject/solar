@@ -73,12 +73,14 @@ func (r *ContractsRepository) Len() int {
 	return len(r.Contracts)
 }
 
-func (r *ContractsRepository) ConfirmContract(contract *DeployedContract) {
-
-}
-
 func (r *ContractsRepository) UnconfirmedContracts() []*DeployedContract {
 	var contracts []*DeployedContract
+
+	for _, contract := range r.Libraries {
+		if !contract.Confirmed {
+			contracts = append(contracts, contract)
+		}
+	}
 
 	for _, contract := range r.Contracts {
 		if !contract.Confirmed {
