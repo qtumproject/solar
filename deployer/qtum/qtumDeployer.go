@@ -57,7 +57,7 @@ func (d *Deployer) CreateContract(c *contract.CompiledContract, jsonParams []byt
 		}
 	}
 
-	gasLimit := 300000
+	gasLimit := 3000000
 
 	bin, err := c.ToBytes(jsonParams)
 	if err != nil {
