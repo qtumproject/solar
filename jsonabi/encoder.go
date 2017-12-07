@@ -7,8 +7,7 @@ import (
 	"strings"
 
 	"github.com/pkg/errors"
-
-	"github.com/hayeah/solar/abi"
+	"github.com/qtumproject/solar/abi"
 )
 
 type Encoder struct {
@@ -71,10 +70,6 @@ func massageJSONValuesToABIValues(args abi.Arguments, vals []interface{}) ([]int
 	for i, arg := range args {
 		val := vals[i]
 		t := arg.Type
-
-		if t.IsSlice {
-			t.Elem
-		}
 
 		switch t.T {
 

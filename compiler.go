@@ -9,17 +9,22 @@ import (
 	"strings"
 
 	"github.com/pkg/errors"
+	"github.com/qtumproject/solar/contract"
 )
 
 type rawCompilerOutput struct {
 	Version   string
-	Contracts map[string]rawCompiledContract
+	Contracts map[string]contract.RawCompiledContract
 }
 
-func (o *rawCompilerOutput) CompiledContracts() map[string]CompiledContract {
-	contracts := make(map[string]CompiledContract)
+func (o *rawCompilerOutput) CompiledContracts() map[string]contract.CompiledContract {
+	contracts := make(map[string]contract.CompiledContract)
 
 	for name, rawContract := range o.Contracts {
+		if len(rawContract.Bin) == 0 {
+			continue
+		}
+
 		// name: filepath:ContractName
 		contractName := name
 		parts := strings.Split(name, ":")
@@ -27,7 +32,7 @@ func (o *rawCompilerOutput) CompiledContracts() map[string]CompiledContract {
 			contractName = parts[1]
 		}
 
-		compiledContract := CompiledContract{
+		compiledContract := contract.CompiledContract{
 			Name:         contractName,
 			Bin:          rawContract.Bin,
 			BinKeccak256: rawContract.BinHash256(),
@@ -58,11 +63,11 @@ type Compiler struct {
 	// only used for error reporting
 	Filename string
 	Opts     CompilerOptions
-	Repo     *contractsRepository
+	Repo     *contract.ContractsRepository
 }
 
 // Compile returns only the contract that has the same name as the source file
-func (c *Compiler) Compile() (*CompiledContract, error) {
+func (c *Compiler) Compile() (*contract.CompiledContract, error) {
 	mainContractName := basenameNoExt(c.Filename)
 
 	contracts, err := c.CompileAll()
@@ -79,7 +84,7 @@ func (c *Compiler) Compile() (*CompiledContract, error) {
 }
 
 // CompileAll returns all contracts in a source file
-func (c *Compiler) CompileAll() (map[string]CompiledContract, error) {
+func (c *Compiler) CompileAll() (map[string]contract.CompiledContract, error) {
 	_, err := os.Stat(c.Filename)
 
 	if err != nil && os.IsNotExist(err) {
@@ -123,11 +128,11 @@ func (c *Compiler) execSolc() (*rawCompilerOutput, error) {
 
 	var stderr bytes.Buffer
 
-	// fmt.Printf("exec: solc %v\n", args)
+	fmt.Printf("exec: solc %v\n", args)
 	cmd := exec.Command("solc", args...)
 	cmd.Stderr = &stderr
 	stdout, err := cmd.Output()
-	if _, ok := err.(*exec.ExitError); ok {
+	if _, hasExitErr := err.(*exec.ExitError); hasExitErr {
 		return nil, &CompilerError{
 			SourceFile:  filename,
 			ErrorOutput: stderr.String(),

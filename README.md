@@ -1,10 +1,12 @@
 # Install
 
 ```
-go get -u github.com/hayeah/solar/cli/solar
+go install -u github.com/qtumproject/solar/cli/solar
 ```
 
 # Prototype for Smart Contract deployment tool
+
+## QTUM
 
 Start qtumd in regtest mode:
 
@@ -15,8 +17,24 @@ qtumd -regtest -rpcuser=howard -rpcpassword=yeh
 Use env variable to specify the local qtumd RPC node:
 
 ```
-export SOLAR_RPC=http://howard:yeh@localhost:13889
+export QTUM_RPC=http://howard:yeh@localhost:13889
 ```
+
+## Ethereum
+
+Start eth in private network
+
+```
+geth --rpc --rpcapi "eth,miner,personal" --datadir "./" --nodiscover console
+```
+
+then open a new tab
+
+```
+export ETH_RPC=http://accountAddress:accountPassword@localhost:8545
+```
+
+`solar` will let you enter the account and password, if you does not set them
 
 Specify an environment.
 
