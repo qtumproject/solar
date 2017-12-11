@@ -47,6 +47,9 @@ func init() {
 			fmt.Printf("        txid: %s\n", c.TransactionID)
 			fmt.Printf("     address: %s\n", c.Address)
 			fmt.Printf("   confirmed: %v\n", c.Confirmed)
+			if c.Sender != "" {
+				fmt.Printf("       owner: %v\n", c.Sender)
+			}
 
 			fmt.Println("")
 
