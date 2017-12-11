@@ -30,7 +30,9 @@ func init() {
 
 		var params []interface{}
 		if jsonParams != nil {
-			err := json.Unmarshal([]byte(*jsonParams), &params)
+			jsonParams := solar.ExpandJSONParams(*jsonParams)
+
+			err := json.Unmarshal([]byte(jsonParams), &params)
 			if err != nil {
 				return err
 			}

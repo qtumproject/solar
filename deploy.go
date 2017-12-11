@@ -68,7 +68,14 @@ func init() {
 
 		fmt.Printf("   \033[36mdeploy\033[0m %s => %s\n", target.file, target.name)
 
-		err = deployer.CreateContract(contract, []byte(*jsonParams), target.name, *force, *aslib)
+		var params []byte
+		if jsonParams != nil {
+			jsonParams := solar.ExpandJSONParams(*jsonParams)
+
+			params = []byte(jsonParams)
+		}
+
+		err = deployer.CreateContract(contract, params, target.name, *force, *aslib)
 		if err != nil {
 			fmt.Println("\u2757\ufe0f \033[36mdeploy\033[0m", err)
 			return

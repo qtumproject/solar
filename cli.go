@@ -1,6 +1,7 @@
 package solar
 
 import (
+	"encoding/hex"
 	"fmt"
 	"log"
 	"net/url"
@@ -13,6 +14,7 @@ import (
 	"github.com/qtumproject/solar/deployer"
 	"github.com/qtumproject/solar/deployer/eth"
 	"github.com/qtumproject/solar/deployer/qtum"
+	"github.com/qtumproject/solar/varstr"
 	kingpin "gopkg.in/alecthomas/kingpin.v2"
 )
 
@@ -104,6 +106,20 @@ func (c *solarCLI) QtumRPC() *qtum.RPC {
 	}
 
 	return rpc
+}
+
+// ExpandJSONParams uses variable substitution syntax (e.g. $Foo, ${Foo}) to as placeholder for contract addresses
+func (c *solarCLI) ExpandJSONParams(jsonParams string) string {
+	repo := c.ContractsRepository()
+
+	return varstr.Expand(jsonParams, func(key string) string {
+		contract, found := repo.Get(key)
+		if !found {
+			panic(errors.Errorf("Invalid address expansion: %s", key))
+		}
+
+		return fmt.Sprintf("%#v", hex.EncodeToString(contract.Address))
+	})
 }
 
 func (c *solarCLI) Deployer() (deployer deployer.Deployer) {
