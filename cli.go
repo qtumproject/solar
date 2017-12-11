@@ -96,6 +96,16 @@ func (c *solarCLI) ContractsRepository() *contract.ContractsRepository {
 	return c.repo
 }
 
+func (c *solarCLI) QtumRPC() *qtum.RPC {
+	rpc, err := qtum.NewRPC(*qtumRPC)
+	if err != nil {
+		fmt.Println("Invalid QTUM RPC URL:", *qtumRPC)
+		os.Exit(1)
+	}
+
+	return rpc
+}
+
 func (c *solarCLI) Deployer() (deployer deployer.Deployer) {
 	log := log.New(os.Stderr, "", log.Lshortfile)
 

@@ -11,13 +11,13 @@ import (
 )
 
 type Deployer struct {
-	rpc *rpc
+	rpc *RPC
 	*contract.ContractsRepository
 }
 
 func NewDeployer(rpcURL *url.URL, repo *contract.ContractsRepository) (*Deployer, error) {
 	return &Deployer{
-		rpc: &rpc{
+		rpc: &RPC{
 			BaseURL: rpcURL,
 		},
 		ContractsRepository: repo,
@@ -49,7 +49,7 @@ func (d *Deployer) ConfirmContract(c *contract.DeployedContract) (err error) {
 }
 
 func (d *Deployer) CreateContract(c *contract.CompiledContract, jsonParams []byte, name string, overwrite bool, aslib bool) (err error) {
-	if overwrite {
+	if !overwrite {
 		if aslib && d.LibExists(name) {
 			return errors.Errorf("library name already used: %s", name)
 		} else if !aslib && d.Exists(name) {
@@ -82,6 +82,7 @@ func (d *Deployer) CreateContract(c *contract.CompiledContract, jsonParams []byt
 		TransactionID:    tx.TxID,
 		Address:          tx.Address,
 		CreatedAt:        time.Now(),
+		Sender:           tx.Sender,
 	}
 
 	if aslib {

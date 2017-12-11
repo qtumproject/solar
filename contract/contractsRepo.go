@@ -20,6 +20,9 @@ type DeployedContract struct {
 	TransactionID Bytes     `json:"txid"`
 	CreatedAt     time.Time `json:"createdAt"`
 	Confirmed     bool      `json:"confirmed"`
+
+	// qtum
+	Sender string `json:"sender,omitempty"`
 }
 
 type ContractsRepository struct {

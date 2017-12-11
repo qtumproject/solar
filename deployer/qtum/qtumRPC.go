@@ -40,11 +40,22 @@ type TransactionReceipt struct {
 	Address contract.Bytes `json:"address"`
 }
 
-type rpc struct {
+func NewRPC(baseurl string) (*RPC, error) {
+	u, err := url.Parse(baseurl)
+	if err != nil {
+		return nil, err
+	}
+
+	return &RPC{
+		BaseURL: u,
+	}, nil
+}
+
+type RPC struct {
 	BaseURL *url.URL
 }
 
-func (rpc *rpc) Call(result interface{}, method string, params ...interface{}) (err error) {
+func (rpc *RPC) Call(result interface{}, method string, params ...interface{}) (err error) {
 	url := rpc.BaseURL
 
 	jsonReq := jsonRPCRequest{
