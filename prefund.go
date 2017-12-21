@@ -1,9 +1,12 @@
 package solar
 
 import (
+	"encoding/hex"
 	"encoding/json"
 	"fmt"
 	"strings"
+
+	"github.com/pkg/errors"
 )
 
 func init() {
@@ -26,6 +29,18 @@ func init() {
 			ownerAddr = contract.Sender
 		} else {
 			ownerAddr = *owner
+		}
+
+		// if the address is hexadecimal, convert it to base58 address
+		_, err = hex.DecodeString(ownerAddr)
+		if err == nil {
+			var b58addr string
+			rpcErr := rpc.Call(&b58addr, "fromhexaddress", ownerAddr)
+			if rpcErr != nil {
+				return errors.Wrap(err, "convert hex address")
+			}
+
+			ownerAddr = b58addr
 		}
 
 		// The JSON object is allowed to have duplicate keys for this call

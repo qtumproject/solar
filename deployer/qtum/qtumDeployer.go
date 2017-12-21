@@ -4,6 +4,8 @@ import (
 	"net/url"
 	"time"
 
+	"github.com/qtumproject/solar/b58addr"
+
 	"math/rand"
 
 	"github.com/pkg/errors"
@@ -82,7 +84,7 @@ func (d *Deployer) CreateContract(c *contract.CompiledContract, jsonParams []byt
 		TransactionID:    tx.TxID,
 		Address:          tx.Address,
 		CreatedAt:        time.Now(),
-		Sender:           tx.Sender,
+		Sender:           b58addr.ToHexString(tx.Sender),
 	}
 
 	if aslib {
