@@ -66,8 +66,6 @@ func init() {
 
 		deployer := solar.Deployer()
 
-		fmt.Printf("   \033[36mdeploy\033[0m %s => %s\n", target.file, target.name)
-
 		var params []byte
 		if jsonParams != nil {
 			jsonParams := solar.ExpandJSONParams(*jsonParams)
@@ -97,6 +95,9 @@ func init() {
 			if err != nil {
 				return err
 			}
+
+			c, _ := repo.Get(target.name)
+			fmt.Printf("   \033[36mdeployed\033[0m %s => %s\n", target.name, c.Address)
 		}
 
 		return

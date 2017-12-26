@@ -22,7 +22,8 @@ type DeployedContract struct {
 	Confirmed     bool      `json:"confirmed"`
 
 	// qtum
-	Sender string `json:"sender,omitempty"`
+	Sender    string `json:"sender,omitempty"`
+	SenderHex string `json:"senderHex,omitempty"`
 }
 
 type ContractsRepository struct {

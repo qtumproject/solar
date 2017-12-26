@@ -84,7 +84,8 @@ func (d *Deployer) CreateContract(c *contract.CompiledContract, jsonParams []byt
 		TransactionID:    tx.TxID,
 		Address:          tx.Address,
 		CreatedAt:        time.Now(),
-		Sender:           b58addr.ToHexString(tx.Sender),
+		Sender:           tx.Sender,
+		SenderHex:        b58addr.ToHexString(tx.Sender),
 	}
 
 	if aslib {
