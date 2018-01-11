@@ -73,6 +73,11 @@ func (r *ContractsRepository) Get(name string) (*DeployedContract, bool) {
 	return contract, ok
 }
 
+func (r *ContractsRepository) GetLib(name string) (*DeployedContract, bool) {
+	contract, ok := r.Libraries[name]
+	return contract, ok
+}
+
 func (r *ContractsRepository) Len() int {
 	return len(r.Contracts)
 }

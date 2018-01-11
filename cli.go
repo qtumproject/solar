@@ -21,6 +21,7 @@ import (
 var (
 	app     = kingpin.New("solar", "Solidity smart contract deployment management.")
 	qtumRPC = app.Flag("qtum_rpc", "RPC provider url").Envar("QTUM_RPC").String()
+	qtumSenderAddress = app.Flag("qtum_sender", "(qtum) Sender UXTO Address").Envar("QTUM_SENDER").String()
 
 	// geth --rpc --rpcapi="eth,personal,miner"
 	ethRPC    = app.Flag("eth_rpc", "RPC provider url").Envar("ETH_RPC").String()
@@ -133,7 +134,7 @@ func (c *solarCLI) Deployer() (deployer deployer.Deployer) {
 		if err != nil {
 			log.Fatalf("Invalid RPC url: %#v", rawurl)
 		}
-		deployer, err = qtum.NewDeployer(rpcURL, c.ContractsRepository())
+		deployer, err = qtum.NewDeployer(rpcURL, c.ContractsRepository(), *qtumSenderAddress)
 	} else if rawurl = *ethRPC; rawurl != "" {
 		rpcURL, err = url.ParseRequestURI(rawurl)
 		if err != nil {

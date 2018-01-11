@@ -15,14 +15,18 @@ import (
 type Deployer struct {
 	rpc *RPC
 	*contract.ContractsRepository
+
+	// qtum base58 sender address used to create a contract.
+	senderAddress string
 }
 
-func NewDeployer(rpcURL *url.URL, repo *contract.ContractsRepository) (*Deployer, error) {
+func NewDeployer(rpcURL *url.URL, repo *contract.ContractsRepository, senderAddress string) (*Deployer, error) {
 	return &Deployer{
 		rpc: &RPC{
 			BaseURL: rpcURL,
 		},
 		ContractsRepository: repo,
+		senderAddress: senderAddress,
 	}, nil
 }
 
@@ -68,7 +72,15 @@ func (d *Deployer) CreateContract(c *contract.CompiledContract, jsonParams []byt
 
 	var tx TransactionReceipt
 
-	err = d.rpc.Call(&tx, "createcontract", bin, gasLimit)
+	args := []interface{}{
+		bin, gasLimit, 0.0000004,
+	}
+
+	if d.senderAddress != "" {
+		args = append(args, d.senderAddress)
+	}
+
+	err = d.rpc.Call(&tx,"createcontract", args...)
 
 	if err != nil {
 		return errors.Wrap(err, "createcontract")

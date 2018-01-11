@@ -1,6 +1,7 @@
 package solar
 
 import (
+	"github.com/qtumproject/solar/contract"
 	"fmt"
 	"log"
 	"strings"
@@ -59,7 +60,7 @@ func init() {
 			Repo:     repo,
 		}
 
-		contract, err := compiler.Compile()
+		compiledContract, err := compiler.Compile()
 		if err != nil {
 			return errors.Wrap(err, "compile")
 		}
@@ -73,7 +74,7 @@ func init() {
 			params = []byte(jsonParams)
 		}
 
-		err = deployer.CreateContract(contract, params, target.name, *force, *aslib)
+		err = deployer.CreateContract(compiledContract, params, target.name, *force, *aslib)
 		if err != nil {
 			fmt.Println("\u2757\ufe0f \033[36mdeploy\033[0m", err)
 			return
@@ -96,8 +97,18 @@ func init() {
 				return err
 			}
 
-			c, _ := repo.Get(target.name)
-			fmt.Printf("   \033[36mdeployed\033[0m %s => %s\n", target.name, c.Address)
+			var deployedContract *contract.DeployedContract
+			if *aslib {
+				deployedContract, _ = repo.GetLib(target.name)
+			} else {
+				deployedContract, _ = repo.Get(target.name)
+			}
+
+			if deployedContract == nil {
+				return errors.New("failed to deploy contract")
+			}
+
+			fmt.Printf("   \033[36mdeployed\033[0m %s => %s\n", target.name, deployedContract.Address)
 		}
 
 		return
