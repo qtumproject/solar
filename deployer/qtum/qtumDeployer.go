@@ -26,7 +26,7 @@ func NewDeployer(rpcURL *url.URL, repo *contract.ContractsRepository, senderAddr
 			BaseURL: rpcURL,
 		},
 		ContractsRepository: repo,
-		senderAddress: senderAddress,
+		senderAddress:       senderAddress,
 	}, nil
 }
 
@@ -80,7 +80,7 @@ func (d *Deployer) CreateContract(c *contract.CompiledContract, jsonParams []byt
 		args = append(args, d.senderAddress)
 	}
 
-	err = d.rpc.Call(&tx,"createcontract", args...)
+	err = d.rpc.Call(&tx, "createcontract", args...)
 
 	if err != nil {
 		return errors.Wrap(err, "createcontract")

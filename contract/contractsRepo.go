@@ -10,6 +10,8 @@ import (
 	"github.com/pkg/errors"
 )
 
+type CompiledContracts map[string]*CompiledContract
+
 type DeployedContracts map[string]*DeployedContract
 
 type DeployedContract struct {
@@ -30,6 +32,9 @@ type ContractsRepository struct {
 	filepath  string
 	Contracts DeployedContracts `json:"contracts"`
 	Libraries DeployedContracts `json:"libraries"`
+
+	// ABI definitions related to the contracts, but not deployed.
+	Related CompiledContracts `json:"related"`
 }
 
 func OpenContractsRepository(filepath string) (repo *ContractsRepository, err error) {
@@ -39,6 +44,7 @@ func OpenContractsRepository(filepath string) (repo *ContractsRepository, err er
 			filepath:  filepath,
 			Contracts: make(DeployedContracts),
 			Libraries: make(DeployedContracts),
+			Related:   make(CompiledContracts),
 		}, nil
 	}
 
@@ -63,6 +69,10 @@ func OpenContractsRepository(filepath string) (repo *ContractsRepository, err er
 
 	if repo.Contracts == nil {
 		repo.Contracts = make(DeployedContracts)
+	}
+
+	if repo.Related == nil {
+		repo.Related = make(CompiledContracts)
 	}
 
 	return

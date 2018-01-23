@@ -1,10 +1,11 @@
 package solar
 
 import (
-	"github.com/qtumproject/solar/contract"
 	"fmt"
 	"log"
 	"strings"
+
+	"github.com/qtumproject/solar/contract"
 
 	"github.com/pkg/errors"
 )
@@ -78,6 +79,23 @@ func init() {
 		if err != nil {
 			fmt.Println("\u2757\ufe0f \033[36mdeploy\033[0m", err)
 			return
+		}
+
+		// Add related contracts to repo
+		relatedContracts, err := compiler.RelatedContracts()
+		if err != nil {
+			return err
+		}
+
+		if len(relatedContracts) > 0 {
+			for name, c := range relatedContracts {
+				repo.Related[name] = c
+			}
+
+			err = repo.Commit()
+			if err != nil {
+				return
+			}
 		}
 
 		newContracts := repo.UnconfirmedContracts()

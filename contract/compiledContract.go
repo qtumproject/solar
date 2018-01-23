@@ -31,9 +31,11 @@ type ABIType struct {
 }
 
 type CompiledContract struct {
-	Name string          `json:"name"`
-	ABI  []ABIDefinition `json:"abi"`
-	Bin  Bytes           `json:"bin"`
+	// Where the contract is defined
+	Source string          `json:"source"`
+	Name   string          `json:"name"`
+	ABI    []ABIDefinition `json:"abi"`
+	Bin    Bytes           `json:"bin"`
 	// KECAAK256 of bytecode without auxdata
 	BinKeccak256 Bytes `json:"binhash"`
 }

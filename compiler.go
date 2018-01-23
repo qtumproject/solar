@@ -17,8 +17,8 @@ type rawCompilerOutput struct {
 	Contracts map[string]contract.RawCompiledContract
 }
 
-func (o *rawCompilerOutput) CompiledContracts() map[string]contract.CompiledContract {
-	contracts := make(map[string]contract.CompiledContract)
+func (o *rawCompilerOutput) CompiledContracts() contract.CompiledContracts {
+	contracts := make(contract.CompiledContracts)
 
 	for name, rawContract := range o.Contracts {
 		if len(rawContract.Bin) == 0 {
@@ -32,14 +32,15 @@ func (o *rawCompilerOutput) CompiledContracts() map[string]contract.CompiledCont
 			contractName = parts[1]
 		}
 
-		compiledContract := contract.CompiledContract{
+		compiledContract := &contract.CompiledContract{
+			Source:       name,
 			Name:         contractName,
 			Bin:          rawContract.Bin,
 			BinKeccak256: rawContract.BinHash256(),
 			ABI:          rawContract.Metadata.Output.ABI,
 		}
 
-		contracts[contractName] = compiledContract
+		contracts[name] = compiledContract
 	}
 
 	return contracts
@@ -64,27 +65,59 @@ type Compiler struct {
 	Filename string
 	Opts     CompilerOptions
 	Repo     *contract.ContractsRepository
+
+	compiledContracts contract.CompiledContracts
+}
+
+func (c *Compiler) mainContractSource() string {
+	mainContractName := basenameNoExt(c.Filename)
+
+	return c.Filename + ":" + mainContractName
+}
+
+func (c *Compiler) mainContractName() string {
+	mainContractName := basenameNoExt(c.Filename)
+	return mainContractName
 }
 
 // Compile returns only the contract that has the same name as the source file
 func (c *Compiler) Compile() (*contract.CompiledContract, error) {
-	mainContractName := basenameNoExt(c.Filename)
 
-	contracts, err := c.CompileAll()
+	contracts, err := c.getCompiledContracts()
 	if err != nil {
 		return nil, err
 	}
 
-	contract, ok := contracts[mainContractName]
+	contractSrc := c.mainContractSource()
+	contract, ok := contracts[contractSrc]
 	if !ok {
-		return nil, errors.Errorf("cannot find contract: %s", mainContractName)
+		return nil, errors.Errorf("cannot find contract: %s", c.mainContractName())
 	}
 
-	return &contract, nil
+	return contract, nil
+}
+
+func (c *Compiler) RelatedContracts() (contract.CompiledContracts, error) {
+	contracts, err := c.getCompiledContracts()
+	if err != nil {
+		return nil, err
+	}
+
+	contractSrc := c.mainContractSource()
+	relatedContracts := make(contract.CompiledContracts)
+	for name, contract := range contracts {
+		if name == contractSrc {
+			continue
+		}
+
+		relatedContracts[name] = contract
+	}
+
+	return relatedContracts, nil
 }
 
 // CompileAll returns all contracts in a source file
-func (c *Compiler) CompileAll() (map[string]contract.CompiledContract, error) {
+func (c *Compiler) compileAll() (contract.CompiledContracts, error) {
 	_, err := os.Stat(c.Filename)
 
 	if err != nil && os.IsNotExist(err) {
@@ -97,6 +130,20 @@ func (c *Compiler) CompileAll() (map[string]contract.CompiledContract, error) {
 	}
 
 	return output.CompiledContracts(), nil
+}
+
+func (c *Compiler) getCompiledContracts() (contract.CompiledContracts, error) {
+	if c.compiledContracts != nil {
+		return c.compiledContracts, nil
+	}
+
+	contracts, err := c.compileAll()
+	if err != nil {
+		return nil, err
+	}
+
+	c.compiledContracts = contracts
+	return contracts, nil
 }
 
 func (c *Compiler) execSolc() (*rawCompilerOutput, error) {
