@@ -4,6 +4,8 @@
 go get -u github.com/qtumproject/solar/cli/solar
 ```
 
+`solar` assumes that the [Solidity compiler](https://github.com/ethereum/solidity) is already installed.
+
 # Prototype for Smart Contract deployment tool
 
 ## QTUM
@@ -18,6 +20,24 @@ Use env variable to specify the local qtumd RPC node:
 
 ```
 export QTUM_RPC=http://howard:yeh@localhost:13889
+```
+
+## QTUM Docker
+
+You can run qtumd with docker, which comes bundled with solar (and `solc`):
+
+```
+docker run -it --rm \
+  --name myapp \
+  -v `pwd`:/dapp \
+  -p 3889:3889 \
+  hayeah/qtumportal
+```
+
+Then you enter into the container by running:
+
+```
+docker exec -it myapp sh
 ```
 
 ## Ethereum
@@ -53,135 +73,93 @@ pragma solidity ^0.4.11;
 contract A {
   uint256 a;
 
-  function setA(uint256 _a) {
+  function A(uint256 _a) {
     a = _a;
-  }
-
-  function getA() returns(uint256) {
-    return a;
   }
 }
 ```
 
-We need to give it a name when deploying. Let's call it `daisy`:
+Use the `deploy` command to create the contract. The constructor parameters may be passed in as a JSON array:
 
 ```
-$ solar deploy contracts/A.sol daisy
-    deploy contracts/A.sol => daisy
+$ solar deploy contracts/A.sol '[100]'
 🚀  All contracts confirmed
+deployed contracts/A.sol => 2672931f2f07b67383a4aec80fb6504727145e8c
 ```
 
-(On a real network it would take longer to deploy. For development locally it is instantenous.)
+> Note: On a real network it would take longer to deploy. For development locally it is instantenous.
 
 You should see the address and ABI saved in a JSON file named `solar.development.json`:
 
-```
+```json
 {
-  "daisy": {
-    "name": "A",
-    "deployName": "daisy",
-    "address": "77a4190bdb5a01df293b0dd921f1a87f5c180620",
-    "txid": "5ef2aa0c2b1d7fd41e3cf794b20617d9d35a0fe508227eb01057213f5c36355c",
-    "abi": [
-      {
-        "name": "getA",
-        "type": "function",
-        "payable": false,
-        "inputs": [],
-        "outputs": [
-          {
-            "name": "",
-            "type": "uint256"
-          }
-        ],
-        "constant": false
-      },
-      {
-        "name": "setA",
-        "type": "function",
-        "payable": false,
-        "inputs": [
-          {
-            "name": "_a",
-            "type": "uint256"
-          }
-        ],
-        "outputs": [],
-        "constant": false
-      }
-    ],
-    "bin": "6060604052341561000f57600080fd5b5b60b98061001e6000396000f300606060405263ffffffff7c0100000000000000000000000000000000000000000000000000000000600035041663d46300fd81146046578063ee919d50146068575b600080fd5b3415605057600080fd5b6056607d565b60405190815260200160405180910390f35b3415607257600080fd5b607b6004356084565b005b6000545b90565b60008190555b505600a165627a7a723058203431ad594c9688027a5ac39ec60fbb0786fc861d6d51417f600fe03b9412752a0029",
-    "binhash": "42712271c9f5e5dcd27eaeb999bf4388eb80c55cd652980a7b22aa34f774d76b",
-    "createdAt": "2017-09-30T16:40:15.656957558+08:00",
-    "confirmed": true
-  }
+  "contracts": {
+    "contracts/A.sol": {
+      "source": "contracts/A.sol:A",
+      "abi": [
+        {
+          "name": "",
+          "type": "constructor",
+          "payable": false,
+          "inputs": [
+            {
+              "name": "_a",
+              "type": "uint256",
+              "indexed": false
+            }
+          ],
+          "outputs": null,
+          "constant": false,
+          "anonymous": false
+        }
+      ],
+      "bin": "60606040523415600e57600080fd5b604051602080606783398101604052808051600055505060358060326000396000f3006060604052600080fd00a165627a7a72305820cd047550e6b1a360fc0f2de526c2f6f0150d249efca0b5820d6050c935e129370029",
+      "binhash": "861924fb216a600b22bc38d51d26b708bbd2d189a3433f0ec4862da6a3d78b9a",
+      "name": "A",
+      "deployName": "contracts/A.sol",
+      "address": "2672931f2f07b67383a4aec80fb6504727145e8c",
+      "txid": "dc36ebb365033f557367c88e4bad2f4c726a609e8a4cc0d5751ff4cab9187a51",
+      "createdAt": "2018-01-26T11:36:09.650368039+08:00",
+      "confirmed": true,
+      "sender": "qYqieW18XiFU1sYCrHFsiBpvxQVXpcwC3R",
+      "senderHex": "a7a0cff24ecf5089a5b5a814b9a6be942ade51c5"
+    }
+  },
+  "libraries": {},
+  "related": {}
 }
 ```
 
-You can't reuse the same name twice. You'll get a warning:
+The contract's deploy name defaults to the contract's file name. You can't deploy using the same name twice.
 
 ```
-$ solar deploy contracts/A.sol daisy
-   deploy contracts/A.sol => daisy
-❗️  deploy name already used: daisy
+$ solar deploy contracts/A.sol
+❗️  deploy contract name already used: contracts/A.sol
 ```
 
 Add the flag `--force` to redeploy a contract:
 
 ```
-$ solar deploy contracts/A.sol daisy --force
-   deploy contracts/Foo.sol => foo
+$ solar deploy contracts/A.sol '[200]' --force
 🚀  All contracts confirmed
+   deployed contracts/A.sol => 3b566019c5e69e3c33c4609b51597b4b83b00e74
 ```
 
 In `solar.development.json` you should see that the address had changed.
 
-# Constructor Parameters
+## Naming A Contract
 
-Suppose that we have a contract that expects 2 constructor parameters, `_a` and `_b`:
-
-```
-pragma solidity ^0.4.11;
-
-contract AB {
-  uint256 a;
-  int256 b;
-
-  function AB(uint256 _a, int256 _b) {
-    a = _a;
-    b = _b;
-  }
-
-  function setA(uint256 _a) {
-    a = _a;
-  }
-
-  function setB(int256 _b) {
-    b = _b;
-  }
-
-  function getA() returns(uint256) {
-    return a;
-  }
-
-  function getB() returns(int256) {
-    return b;
-  }
-}
-```
-
-You can pass in the constructor parameters as a JSON array:
+By default the file name is used as the deploy name. We can change the deploy name to `Ace` by appending it after the file name:
 
 ```
-$ solar deploy contracts/AB.sol ab '[1, 2]'
-   deploy contracts/AB.sol => ab
+$ solar deploy contracts/A.sol:Ace '[300]'
 🚀  All contracts confirmed
+   deployed Ace => 38dfbad58cb340815e649242fc7514fe1fa54e7d
 ```
 
-The parameter values are type checked. It fails if you try to pass in a negative integer for the unsigned integer `_a`:
+The deploy name must be unique. Deploy should fail if the a name is used twice:
 
 ```
-$ solar deploy contracts/AB.sol ab '[-1, 2]' --force
-   deploy contracts/AB.sol => ab
-❗️  deploy constructor: argv[0] '_a': Expected uint256 got: -1
+$ solar deploy contracts/A.sol:Ace '[300]'
+❗️  deploy contract name already used: Ace
 ```
