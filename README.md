@@ -163,3 +163,47 @@ The deploy name must be unique. Deploy should fail if the a name is used twice:
 $ solar deploy contracts/A.sol:Ace '[300]'
 ❗️  deploy contract name already used: Ace
 ```
+
+## Deploy A Library
+
+Sometimes your contract may depend on a library, which requires linking when deploying. The most frequently used library is maybe `SafeMath.lib`.
+
+```
+solar deploy contracts/SafeMathLib.sol --lib
+
+🚀  All contracts confirmed
+   deployed contracts/SafeMathLib.sol => 26fe40c433b4d109299660284eaa475b95462342
+```
+
+Then deploying other contracts that reference `SafeMathLib` will automatically link to this deployed instance.
+
+# deploy
+
+Help message for `deploy`:
+
+```
+solar help deploy
+
+usage: solar deploy [<flags>] <target> [<jsonParams>]
+
+Compile Solidity contracts.
+
+Flags:
+  --help                     Show context-sensitive help (also try --help-long and --help-man).
+  --qtum_rpc=QTUM_RPC        RPC provider url
+  --qtum_sender=QTUM_SENDER  (qtum) Sender UXTO Address
+  --eth_rpc=ETH_RPC          RPC provider url
+  --env="development"        Environment name
+  --repo=REPO                Path of contracts repository
+  --optimize                 [solc] should Enable bytecode optimizer
+  --allow-paths=""           [solc] Allow a given path for imports. A list of paths can be supplied by separating them with a comma.
+  --force                    Overwrite previously deployed contract with the same deploy name
+  --lib                      Deploy the contract as a library
+  --no-confirm               Don't wait for network to confirm deploy
+  --no-fast-confirm          (dev) Don't generate block to confirm deploy immediately
+  --gasLimit=3000000         gas limit for creating a contract
+
+Args:
+  <target>        Solidity contracts to deploy.
+  [<jsonParams>]  Constructor params as a json array
+```
