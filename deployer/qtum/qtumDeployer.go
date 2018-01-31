@@ -54,7 +54,7 @@ func (d *Deployer) ConfirmContract(c *contract.DeployedContract) (err error) {
 	}
 }
 
-func (d *Deployer) CreateContract(c *contract.CompiledContract, jsonParams []byte, name string, overwrite bool, aslib bool) (err error) {
+func (d *Deployer) CreateContract(c *contract.CompiledContract, jsonParams []byte, name string, overwrite bool, aslib bool, gasLimit int) (err error) {
 	if !overwrite {
 		if aslib && d.LibExists(name) {
 			return errors.Errorf("library name already used: %s", name)
@@ -62,8 +62,6 @@ func (d *Deployer) CreateContract(c *contract.CompiledContract, jsonParams []byt
 			return errors.Errorf("contract name already used: %s", name)
 		}
 	}
-
-	gasLimit := 3000000
 
 	bin, err := c.ToBytes(jsonParams)
 	if err != nil {
@@ -75,6 +73,8 @@ func (d *Deployer) CreateContract(c *contract.CompiledContract, jsonParams []byt
 	args := []interface{}{
 		bin, gasLimit, 0.0000004,
 	}
+
+	// fmt.Println("create contract args", args)
 
 	if d.senderAddress != "" {
 		args = append(args, d.senderAddress)

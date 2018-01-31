@@ -39,6 +39,7 @@ func init() {
 	aslib := cmd.Flag("lib", "Deploy the contract as a library").Bool()
 	noconfirm := cmd.Flag("no-confirm", "Don't wait for network to confirm deploy").Bool()
 	noFastConfirm := cmd.Flag("no-fast-confirm", "(dev) Don't generate block to confirm deploy immediately").Bool()
+	gasLimit := cmd.Flag("gasLimit", "gas limit for creating a contract").Default("3000000").Int()
 
 	target := cmd.Arg("target", "Solidity contracts to deploy.").Required().String()
 	jsonParams := cmd.Arg("jsonParams", "Constructor params as a json array").Default("").String()
@@ -75,7 +76,7 @@ func init() {
 			params = []byte(jsonParams)
 		}
 
-		err = deployer.CreateContract(compiledContract, params, target.name, *force, *aslib)
+		err = deployer.CreateContract(compiledContract, params, target.name, *force, *aslib, *gasLimit)
 		if err != nil {
 			fmt.Println("\u2757\ufe0f \033[36mdeploy\033[0m", err)
 			return

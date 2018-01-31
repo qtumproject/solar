@@ -41,7 +41,7 @@ func NewDeployer(rpcURL *url.URL, repo *contract.ContractsRepository) (*Deployer
 	}, nil
 }
 
-func (d *Deployer) CreateContract(c *contract.CompiledContract, jsonParams []byte, name string, overwrite bool, aslib bool) (err error) {
+func (d *Deployer) CreateContract(c *contract.CompiledContract, jsonParams []byte, name string, overwrite bool, aslib bool, gasLimit int) (err error) {
 	if overwrite {
 		if aslib && d.LibExists(name) {
 			return errors.Errorf("library name already used: %s", name)
