@@ -42,24 +42,22 @@ docker exec -it myapp sh
 
 ## Ethereum
 
-Start eth in private network
+Start an Ethereum node, with RPC service:
 
 ```
 geth --rpc --rpcapi "eth,miner,personal" --datadir "./" --nodiscover console
 ```
 
-then open a new tab
+Set the RPC endpoint, with your account address and password:
 
 ```
-export ETH_RPC=http://accountAddress:accountPassword@localhost:8545
+export ETH_RPC=http://$accountAddress:$accountPassword@localhost:8545
 ```
 
-`solar` will let you enter the account and password, if you does not set them
-
-Specify an environment.
+Specify a deployment environment.
 
 ```
-# The environment is `development` by default if you don't explicitly specify one
+# The environment is `development` by default
 export SOLAR_ENV=development
 ```
 

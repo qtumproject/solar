@@ -21,13 +21,15 @@ type Deployer struct {
 }
 
 func NewDeployer(rpcURL *url.URL, repo *contract.ContractsRepository) (*Deployer, error) {
-	address, password := "", ""
-	if auth := rpcURL.User; auth != nil {
-		address = auth.Username()
-		password, _ = auth.Password()
-		rpcURL.User = nil
+	auth := rpcURL.User
+	if auth == nil {
+		return nil, errors.New("address and password not specified")
 	}
-	acc := NewAccount(address, password)
+
+	address := auth.Username()
+	password, _ := auth.Password()
+
+	// acc := NewAccount(address, password)
 
 	client, err := rpc.Dial(rpcURL.String())
 	if err != nil {
@@ -37,12 +39,15 @@ func NewDeployer(rpcURL *url.URL, repo *contract.ContractsRepository) (*Deployer
 	return &Deployer{
 		ContractsRepository: repo,
 		client:              client,
-		Account:             acc,
+		Account: Account{
+			Addr:     address,
+			Password: password,
+		},
 	}, nil
 }
 
 func (d *Deployer) CreateContract(c *contract.CompiledContract, jsonParams []byte, name string, overwrite bool, aslib bool, gasLimit int) (err error) {
-	if overwrite {
+	if !overwrite {
 		if aslib && d.LibExists(name) {
 			return errors.Errorf("library name already used: %s", name)
 		} else if !aslib && d.Exists(name) {
@@ -63,9 +68,9 @@ func (d *Deployer) CreateContract(c *contract.CompiledContract, jsonParams []byt
 	}
 
 	t := T{
-		From: d.Account.Addr,
-		Data: "0x" + bin.String(),
-		// Gas:      3000000,
+		From:     d.Account.Addr,
+		Data:     "0x" + bin.String(),
+		Gas:      gasLimit,
 		GasPrice: big.NewInt(1),
 	}
 
