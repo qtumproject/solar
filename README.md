@@ -61,6 +61,31 @@ Specify a deployment environment.
 export SOLAR_ENV=development
 ```
 
+## Parity Dev Chain
+
+For development purposes, an alternative to geth or testrpc is the parity dev chain. It has instantaneous mining, and pre-generates an account with Ether.
+
+```
+parity \
+  --chain dev \
+  --jsonrpc-hosts all \
+  --jsonrpc-interface all \
+  --ws-interface all \
+  --rpcport 8545 \
+  --no-discovery \
+  --max-peers=2 \
+  --min-peers=0 \
+  --geth
+```
+
+The magic account is `0x00a329c0648769a73afac7f9381e08fb43dbea72`, and the password is the empty string.
+
+You can configure ETH_RPC like this:
+
+```
+export ETH_RPC=http://0x00a329c0648769a73afac7f9381e08fb43dbea72:@localhost:8545
+```
+
 # Deploy Contract
 
 Suppose we have the following contract in `contracts/Foo.sol`:
