@@ -4,8 +4,10 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
+	"log"
 	"os"
 	"os/exec"
+	"path/filepath"
 	"strings"
 
 	"github.com/pkg/errors"
@@ -158,7 +160,18 @@ func (c *Compiler) execSolc() (*rawCompilerOutput, error) {
 	}
 
 	if len(opts.AllowPaths) > 0 {
-		args = append(args, "--allow-paths", strings.Join(opts.AllowPaths, ","))
+		var expandedPaths []string
+		for _, allowPath := range opts.AllowPaths {
+			expandedPath, err := filepath.EvalSymlinks(allowPath)
+			if err != nil {
+				log.Println("allow path error:", err, allowPath)
+				continue
+			}
+
+			expandedPaths = append(expandedPaths, expandedPath)
+		}
+
+		args = append(args, "--allow-paths", strings.Join(expandedPaths, ","))
 	}
 
 	// libraries linkage support
