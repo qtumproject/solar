@@ -61,9 +61,21 @@ Specify a deployment environment.
 export SOLAR_ENV=development
 ```
 
+## ganache-cli
+
+Start ganache with a fixed seed:
+
+```
+ganache-cli -d testrpc -b 3
+```
+
+```
+export ETH_RPC=http://0x90f8bf6a479f320ead074411a4b0e7944ea8c9c1:@localhost:8545
+```
+
 ## Parity Dev Chain
 
-For development purposes, an alternative to geth or testrpc is the parity dev chain. It has instantaneous mining, and pre-generates an account with Ether.
+For development purposes, an alternative to geth or testrpc is the parity dev chain. It supports instantaneous mining, and pre-generates an account already funded with Ether.
 
 ```
 parity \
@@ -78,9 +90,9 @@ parity \
   --geth
 ```
 
-The magic account is `0x00a329c0648769a73afac7f9381e08fb43dbea72`, and the password is the empty string.
+The magic account pre-generated account is `0x00a329c0648769a73afac7f9381e08fb43dbea72`. The password is the empty string.
 
-You can configure ETH_RPC like this:
+Configure ETH_RPC like this:
 
 ```
 export ETH_RPC=http://0x00a329c0648769a73afac7f9381e08fb43dbea72:@localhost:8545
