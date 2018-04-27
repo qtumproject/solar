@@ -3,7 +3,6 @@ package contract
 import (
 	"encoding/hex"
 	"encoding/json"
-	"fmt"
 
 	"github.com/ethereum/go-ethereum/crypto/sha3"
 	"github.com/pkg/errors"
@@ -147,30 +146,6 @@ func (c *RawCompiledContract) UnmarshalJSON(data []byte) error {
 
 	c.RawMetadata = dest.RawMetadata
 	c.Bin = bin
-
-	return nil
-}
-
-type Bytes []byte
-
-func (b Bytes) String() string {
-	return hex.EncodeToString(b)
-}
-
-func (b Bytes) MarshalJSON() ([]byte, error) {
-	hexstr := fmt.Sprintf("\"%s\"", b.String())
-	return []byte(hexstr), nil
-}
-
-func (b *Bytes) UnmarshalJSON(data []byte) error {
-	// strip the quotes \"\"
-	hexstr := data[1 : len(data)-1]
-	dst := make([]byte, hex.DecodedLen(len(hexstr)))
-	_, err := hex.Decode(dst, hexstr)
-	if err != nil {
-		return err
-	}
-	*b = dst
 
 	return nil
 }

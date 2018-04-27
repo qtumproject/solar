@@ -69,7 +69,7 @@ func (d *Deployer) CreateContract(c *contract.CompiledContract, jsonParams []byt
 
 	t := T{
 		From:     d.Account.Addr,
-		Data:     "0x" + bin.String(),
+		Data:     bin.String(),
 		Gas:      gasLimit,
 		GasPrice: big.NewInt(1),
 	}

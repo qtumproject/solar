@@ -19,8 +19,8 @@ import (
 )
 
 var (
-	app     = kingpin.New("solar", "Solidity smart contract deployment management.")
-	qtumRPC = app.Flag("qtum_rpc", "RPC provider url").Envar("QTUM_RPC").String()
+	app               = kingpin.New("solar", "Solidity smart contract deployment management.")
+	qtumRPC           = app.Flag("qtum_rpc", "RPC provider url").Envar("QTUM_RPC").String()
 	qtumSenderAddress = app.Flag("qtum_sender", "(qtum) Sender UXTO Address").Envar("QTUM_SENDER").String()
 
 	// geth --rpc --rpcapi="eth,personal,miner"
@@ -89,7 +89,7 @@ func (c *solarCLI) ContractsRepository() *contract.ContractsRepository {
 
 		repo, err := contract.OpenContractsRepository(repoFilePath)
 		if err != nil {
-			fmt.Println("Cannot open contracts repo:", repoFilePath)
+			fmt.Printf("error opening contracts repo file %s: %s\n", repoFilePath, err)
 			os.Exit(1)
 		}
 
@@ -123,32 +123,42 @@ func (c *solarCLI) ExpandJSONParams(jsonParams string) string {
 	})
 }
 
+func (c *solarCLI) ConfigureBytesOutputFormat() {
+	if *ethRPC != "" {
+		contract.SetFormatBytesWithPrefix(true)
+	}
+}
+
 func (c *solarCLI) Deployer() (deployer deployer.Deployer) {
 	log := log.New(os.Stderr, "", log.Lshortfile)
 
 	var err error
 	var rpcURL *url.URL
-	rawurl := *qtumRPC
-	if rawurl != "" {
+
+	if rawurl := *qtumRPC; rawurl != "" {
+
 		rpcURL, err = url.ParseRequestURI(rawurl)
 		if err != nil {
 			log.Fatalf("Invalid RPC url: %#v", rawurl)
 		}
 		deployer, err = qtum.NewDeployer(rpcURL, c.ContractsRepository(), *qtumSenderAddress)
-	} else if rawurl = *ethRPC; rawurl != "" {
+	}
+
+	if rawurl := *ethRPC; rawurl != "" {
 		rpcURL, err = url.ParseRequestURI(rawurl)
 		if err != nil {
 			log.Fatalf("Invalid RPC url: %#v", rawurl)
 		}
+
 		deployer, err = eth.NewDeployer(rpcURL, c.ContractsRepository())
+	}
+
+	if deployer == nil {
+		log.Fatalln("Please specify RPC url by setting QTUM_RPC or ETH_RPC or using flag --qtum_rpc or --eth_rpc")
 	}
 
 	if err != nil {
 		log.Fatalf("NewDeployer error %v", err)
-	}
-
-	if rawurl == "" {
-		log.Fatalln("Please specify RPC url by setting QTUM_RPC or ETH_RPC or using flag --qtum_rpc or --eth_rpc")
 	}
 
 	return deployer
@@ -160,6 +170,8 @@ func Main() {
 		fmt.Println(err)
 		os.Exit(1)
 	}
+
+	solar.ConfigureBytesOutputFormat()
 
 	task := appTasks[cmdName]
 	err = task()
