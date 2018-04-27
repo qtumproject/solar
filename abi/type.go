@@ -340,6 +340,7 @@ func (t Type) encodeSlice(v interface{}) ([]byte, error) {
 
 // TODO: handle truncation
 func (t Type) encodeIntTy(v interface{}) ([]byte, error) {
+	fmt.Println("encode int", v)
 	switch v := v.(type) {
 	case int, int8, int16, int32, int64:
 		n, err := strconv.Atoi(fmt.Sprintf("%d", v))
@@ -359,6 +360,14 @@ func (t Type) encodeIntTy(v interface{}) ([]byte, error) {
 		i, _ := f.Int(nil)
 
 		return U256(i), nil
+	case string:
+		var i big.Int
+		_, ok := i.SetString(v, 0)
+		if !ok {
+			return nil, errors.Errorf("Expected big number string for %s got: %v", t.String(), v)
+		}
+
+		return U256(&i), nil
 	default:
 		return nil, errors.Errorf("Expected %s got: %v", t.String(), v)
 	}
@@ -393,6 +402,14 @@ func (t Type) encodeUintTy(v interface{}) ([]byte, error) {
 		i, _ := f.Int(nil)
 
 		return U256(i), nil
+	case string:
+		var i big.Int
+		_, ok := i.SetString(v, 0)
+		if !ok {
+			return nil, errors.Errorf("Expected big number string for %s got: %v", t.String(), v)
+		}
+
+		return U256(&i), nil
 	default:
 		return nil, errors.Errorf("Expected %s got: %v", t.String(), v)
 	}
