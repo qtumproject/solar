@@ -90,6 +90,7 @@ func (d *Deployer) CreateContract(c *contract.CompiledContract, jsonParams []byt
 		DeployName:       name,
 		TransactionID:    contract.Bytes(hexBytes),
 		CreatedAt:        time.Now(),
+		Sender:           d.Account.Addr,
 	}
 
 	if aslib {
@@ -138,8 +139,8 @@ func (d *Deployer) ConfirmContract(c *contract.DeployedContract) (err error) {
 }
 
 func (d *Deployer) Mine() (err error) {
-	var result interface{}
-	err = d.client.Call(&result, "miner_start", 1)
+	// var result interface{}
+	// err = d.client.Call(&result, "miner_start", 1)
 	//fmt.Printf("miner_start %#v\n", result)
 	return
 }
