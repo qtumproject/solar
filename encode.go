@@ -1,11 +1,11 @@
 package solar
 
 import (
-	"encoding/hex"
 	"encoding/json"
 	"fmt"
 
 	"github.com/pkg/errors"
+	"github.com/qtumproject/solar/contract"
 )
 
 func init() {
@@ -43,7 +43,7 @@ func init() {
 			return err
 		}
 
-		fmt.Println(hex.EncodeToString(data))
+		fmt.Println(contract.Bytes(data).String())
 
 		return nil
 	}
