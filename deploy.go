@@ -3,7 +3,10 @@ package solar
 import (
 	"fmt"
 	"log"
+	"math/big"
 	"strings"
+
+	"github.com/qtumproject/solar/deployer"
 
 	"github.com/qtumproject/solar/contract"
 
@@ -39,7 +42,8 @@ func init() {
 	aslib := cmd.Flag("lib", "Deploy the contract as a library").Bool()
 	noconfirm := cmd.Flag("no-confirm", "Don't wait for network to confirm deploy").Bool()
 	noFastConfirm := cmd.Flag("no-fast-confirm", "(dev) Don't generate block to confirm deploy immediately").Bool()
-	gasLimit := cmd.Flag("gasLimit", "gas limit for creating a contract").Default("3000000").Int()
+	gasLimit := cmd.Flag("gasLimit", "gas limit for creating a contract").Default("3000000").Uint()
+	gasPrice := cmd.Flag("gasPrice", "gas price for transaction in satoshi (default 40) or gwei (default 1)").Default("").String()
 
 	target := cmd.Arg("target", "Solidity contracts to deploy.").Required().String()
 	jsonParams := cmd.Arg("jsonParams", "Constructor params as a json array").Default("").String()
@@ -67,8 +71,6 @@ func init() {
 			return errors.Wrap(err, "compile")
 		}
 
-		deployer := solar.Deployer()
-
 		var params []byte
 		if jsonParams != nil {
 			jsonParams := solar.ExpandJSONParams(*jsonParams)
@@ -76,7 +78,38 @@ func init() {
 			params = []byte(jsonParams)
 		}
 
-		err = deployer.CreateContract(compiledContract, params, target.name, *force, *aslib, *gasLimit)
+		gasPrice := *gasPrice
+		if gasPrice == "" {
+			switch solar.RPCPlatform() {
+			case RPCEthereum:
+				gasPrice = "1"
+			case RPCQtum:
+				gasPrice = "40"
+			}
+		}
+
+		parsedGasPrice, _, err := big.ParseFloat(gasPrice, 0, big.MaxPrec, big.ToNearestEven)
+		if err != nil {
+			return errors.Errorf("Cannot parse gas price: %s", gasPrice)
+		}
+
+		if parsedGasPrice.Sign() <= 0 {
+			return errors.Errorf("Gas price must be positive: %s", gasPrice)
+		}
+
+		fmt.Println("cli gasPrice", gasPrice, parsedGasPrice.String())
+
+		deployOpts := deployer.Options{
+			Name:      target.name,
+			Overwrite: *force,
+			AsLib:     *aslib,
+			GasLimit:  *gasLimit,
+			GasPrice:  parsedGasPrice,
+		}
+
+		dpl := solar.Deployer()
+
+		err = dpl.CreateContract(compiledContract, params, &deployOpts)
 		if err != nil {
 			fmt.Println("\u2757\ufe0f \033[36mdeploy\033[0m", err)
 			return
@@ -105,13 +138,13 @@ func init() {
 			allowFastConfirm := *solarEnv == "development" || *solarEnv == "test"
 			if *noFastConfirm == false && allowFastConfirm {
 				//fmt.Println("call deployer.Mine")
-				err = deployer.Mine()
+				err = dpl.Mine()
 				if err != nil {
 					log.Println(err)
 				}
 			}
 
-			err := repo.ConfirmAll(getConfirmUpdateProgressFunc(), deployer.ConfirmContract)
+			err := repo.ConfirmAll(getConfirmUpdateProgressFunc(), dpl.ConfirmContract)
 			if err != nil {
 				return err
 			}

@@ -4,6 +4,8 @@ import (
 	"net/url"
 	"time"
 
+	"github.com/qtumproject/solar/deployer"
+
 	"github.com/qtumproject/solar/b58addr"
 
 	"math/rand"
@@ -54,11 +56,14 @@ func (d *Deployer) ConfirmContract(c *contract.DeployedContract) (err error) {
 	}
 }
 
-func (d *Deployer) CreateContract(c *contract.CompiledContract, jsonParams []byte, name string, overwrite bool, aslib bool, gasLimit int) (err error) {
-	if !overwrite {
-		if aslib && d.LibExists(name) {
+func (d *Deployer) CreateContract(c *contract.CompiledContract, jsonParams []byte, opts *deployer.Options) (err error) {
+	// TODO: dry out similar CreateContract code from eth and qtum deployers
+	name := opts.Name
+
+	if !opts.Overwrite {
+		if opts.AsLib && d.LibExists(name) {
 			return errors.Errorf("library name already used: %s", name)
-		} else if !aslib && d.Exists(name) {
+		} else if !opts.AsLib && d.Exists(name) {
 			return errors.Errorf("contract name already used: %s", name)
 		}
 	}
@@ -69,6 +74,14 @@ func (d *Deployer) CreateContract(c *contract.CompiledContract, jsonParams []byt
 	}
 
 	var tx TransactionReceipt
+
+	var gasLimit uint
+
+	if opts.GasLimit > 0 {
+		gasLimit = opts.GasLimit
+	} else {
+		gasLimit = 300000
+	}
 
 	args := []interface{}{
 		bin, gasLimit, 0.0000004,
@@ -100,7 +113,7 @@ func (d *Deployer) CreateContract(c *contract.CompiledContract, jsonParams []byt
 		SenderHex:        b58addr.ToHexString(tx.Sender),
 	}
 
-	if aslib {
+	if opts.AsLib {
 		d.SetLib(name, deployedContract)
 	} else {
 		d.Set(name, deployedContract)

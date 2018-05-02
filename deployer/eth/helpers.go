@@ -31,6 +31,6 @@ func IntToHex(i int) string {
 }
 
 // BigToHex covert big.Int to hexadecimal representation
-func BigToHex(bigInt big.Int) string {
+func BigToHex(bigInt *big.Int) string {
 	return "0x" + strings.TrimPrefix(fmt.Sprintf("%x", bigInt.Bytes()), "0")
 }

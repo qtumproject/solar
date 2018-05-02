@@ -9,6 +9,8 @@ import (
 	"net/url"
 	"time"
 
+	"github.com/qtumproject/solar/deployer"
+
 	"github.com/ethereum/go-ethereum/rpc"
 	"github.com/pkg/errors"
 	"github.com/qtumproject/solar/contract"
@@ -46,11 +48,13 @@ func NewDeployer(rpcURL *url.URL, repo *contract.ContractsRepository) (*Deployer
 	}, nil
 }
 
-func (d *Deployer) CreateContract(c *contract.CompiledContract, jsonParams []byte, name string, overwrite bool, aslib bool, gasLimit int) (err error) {
-	if !overwrite {
-		if aslib && d.LibExists(name) {
+func (d *Deployer) CreateContract(c *contract.CompiledContract, jsonParams []byte, opts *deployer.Options) (err error) {
+	name := opts.Name
+
+	if !opts.Overwrite {
+		if opts.AsLib && d.LibExists(name) {
 			return errors.Errorf("library name already used: %s", name)
-		} else if !aslib && d.Exists(name) {
+		} else if !opts.AsLib && d.Exists(name) {
 			return errors.Errorf("contract name already used: %s", name)
 		}
 	}
@@ -67,11 +71,21 @@ func (d *Deployer) CreateContract(c *contract.CompiledContract, jsonParams []byt
 		return err
 	}
 
+	var gasPrice big.Float // gwei
+	gasPrice.Copy(opts.GasPrice)
+	gasPrice.Mul(&gasPrice, big.NewFloat(1e9))
+
+	var gasPriceWei big.Int
+	gasPrice.Int(&gasPriceWei)
+
+	fmt.Println("gasPrice", opts.GasPrice.String(), gasPrice.String())
+	fmt.Println("gasPriceWei", gasPriceWei.String())
+
 	t := T{
 		From:     d.Account.Addr,
 		Data:     bin.String(),
-		Gas:      gasLimit,
-		GasPrice: big.NewInt(1),
+		Gas:      big.NewInt(int64(opts.GasLimit)),
+		GasPrice: &gasPriceWei,
 	}
 
 	//fmt.Printf("T: %#v\n", t)
@@ -93,7 +107,7 @@ func (d *Deployer) CreateContract(c *contract.CompiledContract, jsonParams []byt
 		Sender:           d.Account.Addr,
 	}
 
-	if aslib {
+	if opts.AsLib {
 		d.ContractsRepository.SetLib(name, deployedContract)
 	} else {
 		d.ContractsRepository.Set(name, deployedContract)
@@ -148,7 +162,7 @@ func (d *Deployer) Mine() (err error) {
 type T struct {
 	From     string
 	To       string
-	Gas      int
+	Gas      *big.Int
 	GasPrice *big.Int
 	Value    *big.Int
 	Data     string
@@ -163,14 +177,14 @@ func (t T) MarshalJSON() ([]byte, error) {
 	if t.To != "" {
 		params["to"] = t.To
 	}
-	if t.Gas > 0 {
-		params["gas"] = IntToHex(t.Gas)
+	if t.Gas.Sign() > 0 {
+		params["gas"] = BigToHex(t.Gas)
 	}
-	if t.GasPrice != nil {
-		params["gasPrice"] = BigToHex(*t.GasPrice)
+	if t.GasPrice.Sign() > 0 {
+		params["gasPrice"] = BigToHex(t.GasPrice)
 	}
 	if t.Value != nil {
-		params["value"] = BigToHex(*t.Value)
+		params["value"] = BigToHex(t.Value)
 	}
 	if t.Data != "" {
 		params["data"] = t.Data

@@ -1,7 +1,6 @@
 package solar
 
 import (
-	"encoding/hex"
 	"fmt"
 	"log"
 	"net/url"
@@ -33,6 +32,13 @@ var (
 	solcAllowPaths = app.Flag("allow-paths", "[solc] Allow a given path for imports. A list of paths can be supplied by separating them with a comma.").Default("").String()
 )
 
+type RPCPlatform int
+
+const (
+	RPCQtum     = iota
+	RPCEthereum = iota
+)
+
 type solarCLI struct {
 	depoyer      deployer.Deployer
 	deployerOnce sync.Once
@@ -45,6 +51,22 @@ type solarCLI struct {
 }
 
 var solar = &solarCLI{}
+
+var (
+	errorUnspecifiedRPC = errors.New("Please specify RPC url by setting QTUM_RPC or ETH_RPC or using flag --qtum_rpc or --eth_rpc")
+)
+
+func (c *solarCLI) RPCPlatform() RPCPlatform {
+	if *qtumRPC == "" && *ethRPC == "" {
+		log.Fatalln(errorUnspecifiedRPC)
+	}
+
+	if *qtumRPC != "" {
+		return RPCQtum
+	}
+
+	return RPCEthereum
+}
 
 func (c *solarCLI) Reporter() *events {
 	c.reporterOnce.Do(func() {
@@ -119,7 +141,7 @@ func (c *solarCLI) ExpandJSONParams(jsonParams string) string {
 			panic(errors.Errorf("Invalid address expansion: %s", key))
 		}
 
-		return fmt.Sprintf("%#v", hex.EncodeToString(contract.Address))
+		return contract.Address.String()
 	})
 }
 
@@ -154,7 +176,7 @@ func (c *solarCLI) Deployer() (deployer deployer.Deployer) {
 	}
 
 	if deployer == nil {
-		log.Fatalln("Please specify RPC url by setting QTUM_RPC or ETH_RPC or using flag --qtum_rpc or --eth_rpc")
+		log.Fatalln(errorUnspecifiedRPC)
 	}
 
 	if err != nil {
