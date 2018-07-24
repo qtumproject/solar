@@ -3,14 +3,13 @@ package solar
 import (
 	"fmt"
 	"log"
+	"math"
 	"math/big"
 	"strings"
 
-	"github.com/qtumproject/solar/deployer"
-
-	"github.com/qtumproject/solar/contract"
-
 	"github.com/pkg/errors"
+	"github.com/qtumproject/solar/contract"
+	"github.com/qtumproject/solar/deployer"
 )
 
 type deployTarget struct {
@@ -88,7 +87,7 @@ func init() {
 			}
 		}
 
-		parsedGasPrice, _, err := big.ParseFloat(gasPrice, 0, big.MaxPrec, big.ToNearestEven)
+		parsedGasPrice, _, err := big.ParseFloat(gasPrice, 0, math.MaxInt8, big.ToNearestEven)
 		if err != nil {
 			return errors.Errorf("Cannot parse gas price: %s", gasPrice)
 		}

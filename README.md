@@ -100,7 +100,7 @@ export ETH_RPC=http://0x00a329c0648769a73afac7f9381e08fb43dbea72:@localhost:8545
 
 # Deploy Contract
 
-Suppose we have the following contract in `contracts/Foo.sol`:
+Suppose we have the following contract in `contracts/A.sol`:
 
 ```
 pragma solidity ^0.4.11;
@@ -108,7 +108,7 @@ pragma solidity ^0.4.11;
 contract A {
   uint256 a;
 
-  function A(uint256 _a) {
+  constructor(uint256 _a) public {
     a = _a;
   }
 }
