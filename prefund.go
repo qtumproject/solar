@@ -10,12 +10,12 @@ import (
 )
 
 func init() {
-	cli := app.Command("prefund", "(qtum) fund an owner address with uxtos")
+	cli := app.Command("prefund", "(qtum) fund an owner address with utxos")
 
 	owner := cli.Arg("owner", "contract name or address to fund").Required().String()
 
-	amount := cli.Arg("amount", "fund an uxto with this amount").Required().Float64()
-	multiples := cli.Arg("multiples", "fund this number of identical uxtos").Default("1").Int()
+	amount := cli.Arg("amount", "fund an utxo with this amount").Required().Float64()
+	multiples := cli.Arg("multiples", "fund this number of identical utxos").Default("1").Int()
 
 	appTasks["prefund"] = func() (err error) {
 		rpc := solar.QtumRPC()
@@ -46,15 +46,15 @@ func init() {
 		// The JSON object is allowed to have duplicate keys for this call
 		// { <addr>: <amount>, ... }
 
-		var uxtos []string
+		var utxos []string
 		for i := 0; i < *multiples; i++ {
-			uxto := fmt.Sprintf(`"%s": %f`, ownerAddr, *amount)
-			uxtos = append(uxtos, uxto)
+			utxo := fmt.Sprintf(`"%s": %f`, ownerAddr, *amount)
+			utxos = append(utxos, utxo)
 		}
 
-		amounts := "{\n" + strings.Join(uxtos, ",\n") + "\n}"
+		amounts := "{\n" + strings.Join(utxos, ",\n") + "\n}"
 
-		// fmt.Println("jsonuxtos", amounts)
+		// fmt.Println("json utxos", amounts)
 
 		var result interface{}
 
