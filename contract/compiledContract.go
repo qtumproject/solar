@@ -4,7 +4,7 @@ import (
 	"encoding/hex"
 	"encoding/json"
 
-	"github.com/ethereum/go-ethereum/crypto/sha3"
+	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/pkg/errors"
 	"github.com/qtumproject/solar/abi"
 )
@@ -100,10 +100,8 @@ type RawCompiledContract struct {
 
 func (c *RawCompiledContract) BinHash256() []byte {
 	bin := c.BinWithoutAuxData()
-	h := sha3.NewKeccak256()
-	h.Write(bin)
-	binDigest := h.Sum(nil)
-	return binDigest
+
+	return crypto.Keccak256(bin)
 }
 
 func (c *RawCompiledContract) BinWithoutAuxData() []byte {
