@@ -20,7 +20,7 @@ import (
 var (
 	app               = kingpin.New("solar", "Solidity smart contract deployment management.")
 	qtumRPC           = app.Flag("qtum_rpc", "RPC provider url").Envar("QTUM_RPC").String()
-	qtumSenderAddress = app.Flag("qtum_sender", "(qtum) Sender UXTO Address").Envar("QTUM_SENDER").String()
+	qtumSenderAddress = app.Flag("qtum_sender", "(qtum) Sender UTXO Address").Envar("QTUM_SENDER").String()
 
 	// geth --rpc --rpcapi="eth,personal,miner"
 	ethRPC    = app.Flag("eth_rpc", "RPC provider url").Envar("ETH_RPC").String()
