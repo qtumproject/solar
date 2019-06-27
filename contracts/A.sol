@@ -1,9 +1,9 @@
-pragma solidity ^0.4.11;
+pragma solidity ^0.5.8;
 
 contract A {
   uint256 a;
 
-  function A(uint256 _a) {
+  constructor(uint256 _a) public {
     a = _a;
   }
 }

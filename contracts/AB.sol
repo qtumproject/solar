@@ -1,4 +1,4 @@
-pragma solidity ^0.4.11;
+pragma solidity ^0.5.8;
 
 contract AB {
   uint256 a;
@@ -6,7 +6,7 @@ contract AB {
 
   uint256 fund;
 
-  function AB(uint256 _a, int256 _b) public {
+  constructor(uint256 _a, int256 _b) public {
     a = _a;
     b = _b;
   }
@@ -15,7 +15,7 @@ contract AB {
     fund += msg.value;
   }
 
-  function getBurnedFund() public constant returns(uint256) {
+  function getBurnedFund() public view returns(uint256) {
     return fund;
   }
 
@@ -32,15 +32,15 @@ contract AB {
     b = _b;
   }
 
-  function getA() public constant returns(uint256) {
+  function getA() public view returns(uint256) {
     return a;
   }
 
-  function getB() public constant returns(int256) {
+  function getB() public view returns(int256) {
     return b;
   }
 
-  function getAB() public constant returns(uint256, int256) {
+  function getAB() public view returns(uint256, int256) {
     return (a, b);
   }
 }

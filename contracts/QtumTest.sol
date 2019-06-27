@@ -1,28 +1,28 @@
-pragma solidity ^0.4.0;
+pragma solidity ^0.5.1;
 
 contract QtumTest {
    uint storedNumber;
-   function QtumTest() {
-       storedNumber=1;
+   constructor() public {
+       storedNumber = 1;
    }
    function setNumber(uint number) public{
        storedNumber = number;
    }
-   function logNumber() constant public{
+   function logNumber() view public{
         log1("storedNumber", uintToBytes(storedNumber));
    }
-   function returnNumber() constant public returns (uint){
+   function returnNumber() view public returns (uint){
        return storedNumber;
    }
    function deposit() public payable{
    }
    function withdraw() public{
        if(!msg.sender.send(this.balance)){
-           throw;
+           revert();
        }
    }
    //utility function
-   function uintToBytes(uint v) constant returns (bytes32 ret) {
+   function uintToBytes(uint v) view public returns (bytes32 ret) {
        if (v == 0) {
            ret = '0';
        }

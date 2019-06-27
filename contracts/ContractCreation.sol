@@ -1,4 +1,4 @@
-pragma solidity ^0.4.11;
+pragma solidity ^0.5.1;
 
 import "./Set.sol";
 
@@ -8,11 +8,11 @@ contract C1 {
   using Set for Set.Data; // this is the crucial change
   Set.Data knownValues;
 
-  function C1() {
+  constructor() {
     c2 = new C2();
   }
 
-  function register(uint value) {
+  function register(uint value) public {
     // Here, all variables of type Set.Data have
     // corresponding member functions.
     // The following function call is identical to
