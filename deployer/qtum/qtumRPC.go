@@ -8,6 +8,8 @@ import (
 	"net/http"
 	"net/url"
 
+	"github.com/pkg/errors"
+
 	"github.com/qtumproject/solar/contract"
 )
 
@@ -95,6 +97,10 @@ func (rpc *RPC) Call(result interface{}, method string, params ...interface{}) (
 	// log.Println("rpc http status", res.Status)
 	if result == nil {
 		return
+	}
+
+	if res.StatusCode != http.StatusOK {
+		return errors.Errorf("QTUM RPC %s", res.Status)
 	}
 
 	dec := json.NewDecoder(res.Body)
