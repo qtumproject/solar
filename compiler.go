@@ -153,7 +153,7 @@ func (c *Compiler) execSolc() (*rawCompilerOutput, error) {
 
 	filename := c.Filename
 
-	args := []string{filename, "--combined-json", "bin,metadata", "--evm-version", "homestead"}
+	args := []string{filename, "--combined-json", "bin,metadata"}
 
 	if !opts.NoOptimize {
 		args = append(args, "--optimize")
