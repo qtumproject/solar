@@ -5,6 +5,7 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
+	"io/ioutil"
 	"net/http"
 	"net/url"
 
@@ -100,7 +101,15 @@ func (rpc *RPC) Call(result interface{}, method string, params ...interface{}) (
 	}
 
 	if res.StatusCode != http.StatusOK {
-		return errors.Errorf("QTUM RPC %s", res.Status)
+
+		// res.Body
+		var errmsg string
+		bytes, err := ioutil.ReadAll(res.Body)
+		if err == nil {
+			errmsg = string(bytes)
+		}
+
+		return errors.Errorf("QTUM RPC %s:\n%s\n", res.Status, errmsg)
 	}
 
 	dec := json.NewDecoder(res.Body)
